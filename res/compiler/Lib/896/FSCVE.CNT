@@ -1,0 +1,89 @@
+:Base fscve.hlp>ref
+:Title Softune Assembler Source Convert Guide
+:Index fscve=fscve.hlp
+1 Softune Assembler Source Convert Guide
+2 Chapter 1 Outline of Assembler Source Convert Guide
+3 1 Outline of Assembler Source Convert Guide = fscve-1
+3 1.1 Outline of Operations = fscve-1-1
+2 Chapter 2 Environment Variables
+3 2 Environment Variables = fscve-2
+3 2.1 FELANG = fscve-2-1
+2 Chapter 3 Start-up and Basic Operations
+3 3 Start-up and Basic Operations = fscve-3
+3 3.1 Starting ASCG = fscve-3-1
+3 3.2 Defining Input/Output Files = fscve-3-2
+3 3.3 Conversion Process = fscve-3-3
+3 3.4 Operation Messages = fscve-3-4
+3 3.5 End Code = fscve-3-5
+2 Chapter 4 Start-up Options
+3 4 Start-up Options = fscve-4
+3 4.1 Format for defining options = fscve-4-1
+3 4.2 List of Options = fscve-4-2
+3 4.2.1 -o = fscve-4-2-1
+3 4.2.2 -f = fscve-4-2-2
+3 4.2.3 -V, -XV = fscve-4-2-3
+3 4.2.4 -help = fscve-4-2-4
+3 4.2.5 -cmsg, -Xcmsg = fscve-4-2-5
+3 4.2.6 -cwno, -Xcwno = fscve-4-2-6
+3 4.2.7 -BC, -XBC = fscve-4-2-7
+3 4.2.8 -w, -Xw = fscve-4-2-8
+3 4.2.9 -asm, -Xasm = fscve-4-2-9
+3 4.2.10 -SJIS = fscve-4-2-10
+2 Chapter 5 Hand-oprated Conversion Support Function
+3 5 Hand-oprated Conversion Support Function = fscve-5
+3 5.1 &SET Macro = fscve-5-1
+3 5.2 Macro Instructions = fscve-5-2
+3 5.3 Character Constants = fscve-5-3
+3 5.4 Segment Name and Symbol Name Space = fscve-5-4
+3 5.5 Absolute Allocation Attribute Section = fscve-5-5
+3 5.6 ORG Instruction within Include/Macro = fscve-5-6
+3 5.7 Boundary Aligning = fscve-5-7
+3 5.8 Precision in Arithmetic Operations = fscve-5-8
+3 5.9 LIST STR/NOSTR Instruction = fscve-5-9
+3 5.10 &INCLUDE Instruction = fscve-5-10
+3 5.11 Bit Position Operation = fscve-5-11
+3 5.12 Defining Assembler Control Commands = fscv-5-12
+3 5.13 LIST STR/NSTR = fscve-5-13
+3 5.14 &INCLUDE Instruction = fscve-5-14
+3 5.15 Bit Position Operation = fscve-5-15
+3 5.16 IOSEG Embedded Declaration Symbol = fscve-5-16
+2 Chapter 6 Converting Operators and Operands
+3 6 Converting Operators and Operands = fscve-6
+3 6.1 Describing Integer Constants = fscve-6-1
+3 6.2 Constants and Strings = fscve-6-2
+3 6.3 Floating-point Numbers = fscve-6-3
+3 6.4 Operator Priority = fscve-6-4
+3 6.5 Other Operand Description = fscve-6-5
+2 Chapter 7 Converting Pseudo Instructions
+3 7 Converting Pseudo Instructions = fscve-7
+3 7.1 Correspondence of Pseudo Instructions between Conventional Assembler and SO = fscve-7-1
+3 7.2 NAME, END Pseudo Instructions = fscve-7-2
+3 7.3 EXTRN/EXTERN, PUBLIC Pseudo instructions = fscve-7-3
+3 7.4 CSEG Pseudo Instruction = fscve-7-4
+3 7.5 DIRSEG Pseudo Instruction = fscve-7-5
+3 7.6 IOSEG Pseudo Instruction = fscve-7-6
+3 7.7 DSEG Pseudo Instruction = fscve-7-7
+3 7.8 SSEG Pseudo Instruction = fscve-7-8
+3 7.9 ENDS Pseudo Instruction = fscve-7-9
+3 7.10 DBIT, DB, DW, DSL, DL, DFS, DFD Pseudo Instructions = fscve-7-10
+3 7.11 RBIT, RB, RW, RSL, RL, RFS, RFD Pseudo Instructions = fscve-7-11
+3 7.12 STRUC to ENDS Pseudo Instructions = fscve-7-12
+3 7.13 EQU and SET Pseudo Instructions = fscve-7-13
+3 7.14 REG Pseudo Instruction, PUSHW POPW Instruction = fscve-7-14
+3 7.15 EVEN, ORG Pseudo Instructions = fscve-7-15
+3 7.16 LIST, LISTON, LISTOFF Pseudo Instructions = fscve-7-16
+3 7.17 PAGE Pseudo Instruction = fscve-7-17
+3 7.18 TITLE and SUBTTL Pseudo Instructions = fscve-7-18
+2 Chapter 8 Converting Macro Instructions
+3 8 Converting Macro Instructions = fscve-8
+3 8.1 Correspondence of Macro Instructions between SOFTUNE Assembler and Conventi = fscve-8-1
+2 Chapter 9 Converting Structured Control Instructions
+3 9 Converting Structured Control Instructions = fscve-9
+3 9.1 Correspondence of Structured Control Instructions between Conventional Asse = fscve-9-1
+3 9.2 Processing Other Structured Control Instructions = fscve-9-2
+2 Chapter 10 Converting #pragma Part for cc907
+3 10 Converting #pragma Part for cc907 = fscve-10
+3 10.1 Converting #pragma asm Part = fscve-10-1
+3 10.2 Converting #pragma Section Part = fscve-10-2
+2 Appendix
+3 A Error Messages = fscve-A

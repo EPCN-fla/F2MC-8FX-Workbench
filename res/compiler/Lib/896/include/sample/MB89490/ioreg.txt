@@ -1,0 +1,1120 @@
+                                                                +-------------+
+                                                                | IO89490-01E |
+                                                                +-------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                           SAMPLE I/O REGISTER FILES
+                       FOR F2MC-8L FAMILY MB89490 SERIES
+
+                                 USERS MANUAL
+
+                                FUJITSU LIMITED
+
+                                 VERSION 1.0
+
+Preface
+
+  The sample I/O register files for F2MC-8L family declares and defines
+  variables, thereby enabling the I/O registers of the F2MC-8L family to
+  be handled as C variables.
+  This manual describes the configuration of the I/O register files,
+  variable declaration and definition.
+
+
+
+
+Items to note before using I/O register files
+
+  - The I/O register files are intended for specific series of F2MC-8L family.
+    Before applying these programs to any other series of MB89490 series,
+    therefore, be sure to modify the I/O register files.
+
+  - When a program for I/O register operation is coded, the I/O register
+    access sequence and timing must be considered. Please refer to the
+    related hardware manuals.
+
+  - The I/O register files are provided as valuable aids in developing the
+    application programs for MB89490 series. In practice, however, some of
+    these programs may need be modified depending on the target system.
+    Before using any of them, therefore, be sure to verify the actual
+    operation of the program.
+
+  - Fujitsu may assume no liability for errors in the I/O register files and
+    no responsibility for correcting errors immediately even if they are found.
+
+Reference manuals
+
+  I/O register files for MB89490 series (Version 1.0) are made based
+  on the following manuals.
+
+    - MB89490 series HARDWARE MANUAL (Preliminary 2003.4)
+
+Contents
+
+CHAPTER 1  CONFIGURATION OF I/O REGISTER FILES
+
+CHAPTER 2  USAGE OF I/O REGISTER FILES
+
+CHAPTER 3  DECLARATION OF I/O REGISTER DECLARATION FILES
+
+CHAPTER 4  VARIABLE AND MEMBER NAMES USED IN I/O REGISTER DECLARATION FILES
+           FOR MB89490 SERIES
+
+CHAPTER 1  CONFIGURATION OF I/O REGISTER FILES
+
+ ${FETOOL}             (Directory set in environment variable FETOOL)
+  +-lib
+    +-896
+      +-include
+        +-sample
+          +-MB89490
+            +-_ffmc8l.h  (I/O register declaration file)
+            |
+            +-_mb89490.h (I/O register declaration file
+            |                                      for MB89490 series)
+            +-_r89490.h  (I/O register structure declaration file
+            |                                      for MB89490 series)
+            |
+            +-_ffmc8l.c  (I/O register definition file for each I/O register)
+
+  - I/O register declaration file
+
+    This file declares all the associated I/O register variables (variables
+    corresponding to I/O registers).
+    Please include this file when coding a program that handles associated
+    I/O registers.
+
+  - I/O register declaration file for MB89490 series
+
+    This file declares all the structure types corresponding to I/O registers
+    for MB89490 series.
+
+  - I/O register structure declaration file for MB89490 series
+
+    This file declares all the structure types corresponding to I/O registers
+    for MB89490 series.
+
+  - I/O register definition file for each I/O register
+
+    This file defines each the associated I/O register variable and specifies
+    arrangement address.
+
+
+  ${FETOOL}              (Directory set in environment variable FETOOL)
+    +-lib
+      +-896
+        +-include
+          +-sample
+            +-_ffmc8l.h  (I/O register declaration file for F2MC-8L family)
+            |
+            +-_ffmc8ls.h (I/O register usable series declaration file
+            |                                           for F2MC-8L family)
+            |
+            +-_mb891xx.h (I/O register structure declaration file
+            |                                           for MB891xx series)
+            +-_mb895xx.h (I/O register structure declaration file
+            |                                           for MB895xx series)
+            +-_mb896xx.h (I/O register structure declaration file
+            |                                           for MB896xx series)
+            +-_mb898xx.h (I/O register structure declaration file
+            |                                           for MB898xx series)
+            +-_mb899xx.h (I/O register structure declaration file
+            |                                           for MB899xx series)
+            |
+            +-_mb89*.h   (I/O register declaration file for each series)
+            |
+            +-_ffmc8l.c  (I/O register definition file for F2MC-8L family)
+
+
+  - I/O register declaration file for F2MC-8L family
+
+    This file declares all the associated I/O register variables (variables
+    corresponding to I/O registers) for F2MC-8L family.
+    Please include this file when coding a program that handles associated
+    I/O registers.
+
+  - I/O register usable series declaration file for F2MC-8L family
+
+    This file declares usable series of I/O register file for F2MC-8L family.
+
+  - I/O register structure declaration file for MB89xxx series
+
+    This file declares all the structure types corresponding to I/O registers
+    for each series.
+
+  - I/O register declaration file for each series
+
+    This file declares all the associated I/O register variables for each
+    series.
+
+  - I/O register definition file for F2MC-8L family
+
+    This file defines each the associated I/O register variable and specifies
+    arrangement address.
+
+CHAPTER 2  USAGE OF I/O REGISTER FILES
+
+  (1) Please compile the all I/O register definition files with the CPU option
+      of using MB number, and make the relocatable load module by linker.
+
+        example:  > fcc896s  -cpu mb89*** -c *.c
+                  > flnk896s -cpu mb89*** -r -o io89***.rel *.obj
+
+  (2) When you describe the application program which refers to the I/O
+      registers, please include the I/O register declaration file.
+
+        example:  #include "_ffmc8l.h"
+
+                  void func(){
+                         .....
+                    IO_TCCS.bit.MODE = 1;
+                         .....
+                  }
+
+  (3) Please compile the application program file with the CPU option of
+      using MB number.
+
+        example:  > fcc896s -cpu mb89*** -c sample.c
+
+        Note: When the MB number of the specified CPU option cannot be used
+              for the I/O register file, the following messages are output.
+
+                #error "The I/O register file of the specified CPU option
+                        does not exist"
+
+  (4) Please link the relocatable load module and the application program
+      object file.
+
+        example:  > flnk896s -cpu mb89*** -o sample.abs io89***.rel sample.obj
+                    -sc IO/IO=0x0000
+
+            Please do this setting to control following Warning.
+
+            Note: Amplification of "- sc IO/IO=0x0000"
+
+            example:Now linking...
+                    *** W1373L: The section is placed outside the I/O area (IO)
+
+            In Workbench, please set the parameter as follows.
+
+            With Linker tag of "Project"-"Setup Project",
+
+            a)  "Set Section" is clicked by "Disposition/Connection" of
+                category.
+            b)  "Specify in Address" is selected ROM/RAM Area Name.
+            c)  "IO" is input to Section Name.
+            d)  "0x0000" is input to Address.
+            e)  "IO" is selected Contents Type.
+            f)  "Set" is clicked.
+            g)  "OK" is clicked.
+
+            Setting is ended clicking "OK" of Setup Project.
+
+CHAPTER 3  DECLARATION OF I/O REGISTER DECLARATION FILES
+
+  Each I/O register declaration file declares the variables and the bit field
+  members corresponding to I/O register names and bit names as follows:
+
+    - The I/O register variables that can be accessed in bits, bytes or words
+      are declared in union type (except some declared in structure type).
+
+    - The I/O register variables that must be accessed in 1, 2 or 4 bytes
+      are declared in integer type.
+
+    - Basically, each variable name is declared in the form of the
+      corresponding I/O  register name plus 'IO_'.
+      (However, for access convenience, two or more I/O registers may be
+       declared by one variable name.)
+
+    - A bit field member name is declared by the corresponding bit name.
+      (some bits are declared in one member name for access convenience)
+
+
+  [Example]  Declaration for I/O register PDR0
+
+    - I/O register structure
+
+          7       6       5       4       3       2       1       0     bit No.
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+      |  P07  |  P06  |  P05  |  P04  |  P03  |  P02  |  P01  |  P00  | PDR0
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+
+    - Contents of declaration
+
+        union io_pdr0 {
+                unsigned char    byte;
+                struct {
+                        unsigned char    P00:1;
+                        unsigned char    P01:1;
+                        unsigned char    P02:1;
+                        unsigned char    P03:1;
+                        unsigned char    P04:1;
+                        unsigned char    P05:1;
+                        unsigned char    P06:1;
+                        unsigned char    P07:1;
+                } bit;
+        };
+
+        extern __io union io_pdr0  IO_PDR0;
+
+  < Notes >
+
+      When the value of the variable is substituted for the bit field member of
+      I/O for which the __io type qualifier is specified, it becomes loading ->
+      AND/OR -> store processing. It is not Read Modify Write(RMW) instruction
+      (SETB,CLRB).
+      The mis-deletion and the mis-rewriting not anticipated might be generated
+      when a certain specific bit writes while processing loading -> AND/OR ->
+      store and it changes.
+      Please describe 0/1 judgments of the substituted variable to prevent the
+      above-mentioned, and to write it in the constant value.
+      However, Read Modify Write  (RMW) instruction (SETB,CLRB) is not
+      generable for enhancing I/O area (0F80H-0FFFH).
+
+    < Example > The variable is substituted for the bit field member of I/O.
+
+        The mis-deletion and the mis-rewriting not anticipated might be
+        generated because it becomes loading -> AND/OR -> store processing if
+        it describes it as follows.
+
+        [C source]
+            IO_PDR0.bit.P00 = RAM_A;
+
+        [ASM output]
+                    MOV     A, _RAM_A
+                    AND     A, #1
+                    MOV     A, _IO_PDR0
+                    AND     A, #254
+                    OR      A
+                    MOV     _IO_PDR0, A
+
+        Please describe 0/1 judgments of the substituted variable to prevent
+        the above-mentioned, and to write it in the constant value.
+        Read Modify Write (RMW) instruction (SETB, CLRB) is output, and the
+        mis-deletion and the mis-rewriting not anticipated can be prevented.
+
+        [Conditions (RMW instruction output)]
+            (1) The type of the bit field that shows I/O is one byte type
+                (char, signed char, unsigned char). AND,
+            (2) The width of the bit field member who shows I/O is one bit.AND,
+            (3) It is I/O register in the I/O area in direct addressing area
+                (0000H-007FH).
+
+        [C source]
+            if (RAM_A) {
+                IO_PDR0.bit.P00 = 1;
+            } else {
+                IO_PDR0.bit.P00 = 0;
+            }
+
+        [ASM output]
+                    MOV     A, _RAM_A
+                    BEQ16   L_23
+                    SETB    _IO_PDR0:0
+                    JMP     L_24
+            L_23:
+                    CLRB    _IO_PDR0:0
+            L_24:
+                    RET
+
+CHAPTER 4  VARIABLE AND MEMBER NAMES USED IN I/O REGISTER DECLARATION FILES
+           FOR MB89490 SERIES
+
+<<I/O port>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  Pn7  |  Pn6  |  Pn5  |  Pn4  |  Pn3  |  Pn2  |  Pn1  |  Pn0  | PDRn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  Pn7  |  Pn6  |  Pn5  |  Pn4  |  Pn3  |  Pn2  |  Pn1  |  Pn0  | DDRn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      PDRn(n=0 - 8)     IO_PDRn.byte          IO_PDRn.bit.Pnx(x:0 - 7)
+
+      DDRn(n=0 - 1)     IO_DDRn               none
+
+      DDRn(n=2,3,5-8)   IO_DDRn.byte          IO_DDRn.bit.Pnx(x:0 - 7)
+    --------------------------------------------------------------------------
+      Note: The following bits do not exist;
+            members to be accessed in bits are not declared.
+
+             PDR5:P55-P57
+             DDR5:P55-P57
+             PDR8:P85-P87
+             DDR8:P85-P87
+
+<<System clock control>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  SCM  |   -   |  WT2  |  WT1  |  WT0  |  SCS  |  CS1  |  CS0  | SYCC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      SYCC              IO_SYCC.byte          IO_SYCC.bit.SCS
+                                              IO_SYCC.bit.SCM
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<Low-power consumption mode>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  STP  |  SLP  |  SPL  |  RST  |  TMD  |   -   |   -   |   -   | STBC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      STBC              IO_STBC.byte          IO_STBC.bit.TMD
+                                              IO_STBC.bit.RST
+                                              IO_STBC.bit.SPL
+                                              IO_STBC.bit.SLP
+                                              IO_STBC.bit.STP
+    --------------------------------------------------------------------------
+
+<<Watchdog timer>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  CS   |   -   |   -   |   -   |  WTE3 |  WTE2 |  WTE1 |  WTE0 | WDTC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      WDTC              IO_WDTC               none
+    --------------------------------------------------------------------------
+
+<<Timebase timer>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  TBOF |  TBIE |   -   |   -   |   -   |  TBC1 |  TBC0 |  TBR  | TBTC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      TBTC              IO_TBTC.byte          IO_TBTC.bit.TBR
+                                              IO_TBTC.bit.TBIE
+                                              IO_TBTC.bit.TBOF
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<Clock prescaler>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  WIF  |  WIE  |   -   |   -   |  WS2  |  WS1  |  WS0  |  WCLR | WPCR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      WPCR              IO_WPCR.byte          IO_WPCR.bit.WCLR
+                                              IO_WPCR.bit.WIE
+                                              IO_WPCR.bit.WIF
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<Reset Flag>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  PONR |  ERST |  WDOG |  SFTR |   -   |   -   |   -   |   -   | RSFR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      RSFR              IO_RSFR.byte          IO_RSFR.bit.SFTR
+                                              IO_RSFR.bit.WDOG
+                                              IO_RSFR.bit.ERST
+                                              IO_RSFR.bit.PONR
+    --------------------------------------------------------------------------
+
+<<External interrupt circuit>>(level)
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  EIR1 |  SEL3 |  SEL2 |  EIE1 |  EIR0 |  SEL1 |  SEL0 |  EIE0 | EIC0
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  EIR3 |  SEL7 |  SEL6 |  EIE3 |  EIR2 |  SEL5 |  SEL4 |  EIE2 | EIC1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  EIR5 |  SEL11|  SEL10|  EIE5 |  EIR4 |  SEL9 |  SEL8 |  EIE4 | EIC2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  EIR7 |  SEL15|  SEL14|  EIE7 |  EIR6 |  SEL13|  SEL12|  EIE6 | EIC3
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  IE17 |  IE16 |  IE15 |  IE14 |  IE13 |  IE12 |  IE11 |  IE10 | EIE1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   -   |   -   |   -   |   -   |   -   |   -   |  IF10 | EIF1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      EIC0              IO_EIC0.byte          IO_EIC0.bit.EIE0
+                                              IO_EIC0.bit.EIR0
+                                              IO_EIC0.bit.EIE1
+                                              IO_EIC0.bit.EIR1
+
+      EIC1              IO_EIC1.byte          IO_EIC1.bit.EIE2
+                                              IO_EIC1.bit.EIR2
+                                              IO_EIC1.bit.EIE3
+                                              IO_EIC1.bit.EIR3
+
+      EIC2              IO_EIC2.byte          IO_EIC2.bit.EIE4
+                                              IO_EIC2.bit.EIR4
+                                              IO_EIC2.bit.EIE5
+                                              IO_EIC2.bit.EIR5
+
+      EIC3              IO_EIC3.byte          IO_EIC3.bit.EIE6
+                                              IO_EIC3.bit.EIR6
+                                              IO_EIC3.bit.EIE7
+                                              IO_EIC3.bit.EIR7
+
+      EIE1              IO_EIE1.byte          IO_EIE1.bit.IE1x(x: 0 - 7)
+
+      EIF1              IO_EIF1.byte          IO_EIF1.bit.IF10
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<8-bit serial I/O>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  SIOF |  SIOE |  SCKE |  SOE  |  CKS1 |  CKS0 |  BDS  |  SST  | SMR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +---------------------------------------------------------------+
+    |                                                               | SDR
+    +---------------------------------------------------------------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      SMR               IO_SMR.byte           IO_SMR.bit.SST
+                                              IO_SMR.bit.BDS
+                                              IO_SMR.bit.SOE
+                                              IO_SMR.bit.SCKE
+                                              IO_SMR.bit.SIOE
+                                              IO_SMR.bit.SIOF
+
+      SDR               IO_SDR                none
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<8/16-bit timer/counter>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  T1IF |  T1IE | T1OS1 | T1OS0 | T1CS1 | T1CS0 | T1STP | T1STR | TnCR0
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  T2IF |  T2IE | T2OS1 | T2OS0 | T2CS1 | T2CS0 | T2STP | T2STR | TnCR1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+      15                           8  7                            0  bit No.
+    +-------------------------------+-------------------------------+
+    |              TDR1             |              TDR0             | TnDR01
+    +-------------------------------+-------------------------------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      TnCR0(n:0-1)      IO_TnCR0.byte         IO_TnCR0.bit.T1STR
+                                              IO_TnCR0.bit.T1STP
+                                              IO_TnCR0.bit.T1IE
+                                              IO_TnCR0.bit.T1IF
+
+      TnCR1(n:0-1)      IO_TnCR1.byte         IO_TnCR1.bit.T2STR
+                                              IO_TnCR1.bit.T2STP
+                                              IO_TnCR1.bit.T2IE
+                                              IO_TnCR1.bit.T2IF
+
+      TnDR01(n:0-1)     IO_TnDR01.word        none
+                        IO_TnDR01.byte.TDR1
+                        IO_TnDR01.byte.TDR0
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<10-bit A/D converter>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |  ANS2 |  ANS1 |  ANS0 |  ADI  |  ADMV |   -   |   AD  | ADC0
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |reserve|reserve|  ADCK |  ADIE |  ADMD |  EXT  |reserve| ADC1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+      15  14  13  12  11  10  9   8   7   6   5   4   3   2   1   0   bit No.
+    +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+    | - | - | - | - | - | - | D9| D8| D7| D6| D5| D4| D3| D2| D1| D0| ADDH/
+    +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ADDL
+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    | ADER7 | ADER6 | ADER5 | ADER4 | ADER3 | ADER2 | ADER1 | ADER0 | ADER
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      ADC0              IO_ADC0.byte          IO_ADC0.bit.AD
+                                              IO_ADC0.bit.ADMV
+                                              IO_ADC0.bit.ADI
+
+      ADC1              IO_ADC1.byte          IO_ADC1.bit.EXT
+                                              IO_ADC1.bit.ADMD
+                                              IO_ADC1.bit.ADIE
+                                              IO_ADC1.bit.ADCK
+
+      ADDH/ADDL         IO_ADD.word           IO_ADD.bit.DATA10   [D0 - D9]
+
+      ADER              IO_ADER.byte          IO_ADER.bit.ADERx(x:0 - 7)
+    --------------------------------------------------------------------------
+      Note 1: When using a simple assignment statement to write data to ADC1
+             (member IO_ADC1.byte), be sure to write 1 to bit0, write 0 to
+             ADMD bit, and write 0 to bit5-6.
+      Note 2:  To prevent a wrong rewriting, the variable in two or more
+              bits is not defined.
+              Please substitute directly and set the value in the byte or
+              the word variable about rewriting two or more bits.
+
+<<8-bit PWM timer>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  PTX0 |   -   |  P10  |  P00  |  TPE0 |  TIR0 |  OE0  |  TIE0 | CNTR0
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  PTX1 |   -   |  P11  |  P01  |  TPE1 |  TIR1 |  OE1  |  TIE1 | CNTR1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +---------------------------------------------------------------+
+    |                                                               | COMRx
+    +---------------------------------------------------------------+ (x:0-1)
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      CNTR0             IO_CNTR0.byte          IO_CNTR0.bit.TIE0
+                                               IO_CNTR0.bit.OE0
+                                               IO_CNTR0.bit.TIR0
+                                               IO_CNTR0.bit.TPE0
+                                               IO_CNTR0.bit.PTX0
+
+      CNTR1             IO_CNTR1.byte          IO_CNTR1.bit.TIE1
+                                               IO_CNTR1.bit.OE1
+                                               IO_CNTR1.bit.TIR1
+                                               IO_CNTR1.bit.TPE1
+                                               IO_CNTR1.bit.PTX1
+
+      COMR              IO_COMRx(x:0-1)        none
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<UART/SIO>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   MD  |  PEN  |  TDP  |  SBL  |   CL  |  CLK2 |  CLK1 |  CLK0 | SMC0
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  RERC |  RXE  |  TXE  |  BRGE |  TXOE |  SCKE |  RIE  |  TIE  | SMC1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  PER  |  OVE  |  FER  |  RDRF |  TDRE |   -   |   -   |   -   | SSD
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +---------------------------------------------------------------+
+    |                                                               | SRC
+    +---------------------------------------------------------------+
+    +---------------------------------------------------------------+
+    |                                                               | SIDR/
+    +---------------------------------------------------------------+ SODR
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      SMC0              IO_SMC0.byte          IO_SMC0.bit.CL
+                                              IO_SMC0.bit.SBL
+                                              IO_SMC0.bit.TDP
+                                              IO_SMC0.bit.PEN
+                                              IO_SMC0.bit.MD
+
+      SMC1              IO_SMC1.byte          IO_SMC1.bit.TIE
+                                              IO_SMC1.bit.RIE
+                                              IO_SMC1.bit.SCKE
+                                              IO_SMC1.bit.TXOE
+                                              IO_SMC1.bit.BRGE
+                                              IO_SMC1.bit.TXE
+                                              IO_SMC1.bit.RXE
+                                              IO_SMC1.bit.RERC
+
+      SSD               IO_SSD.byte           IO_SSD.bit.TDRE
+                                              IO_SSD.bit.RDRF
+                                              IO_SSD.bit.FER
+                                              IO_SSD.bit.OVE
+                                              IO_SSD.bit.PER
+
+      SRC               IO_SRC                none
+
+      SIDR/SODR         IO_SIDR               none
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<IIC bus interface>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   BB  |  RSC  |   AL  |  LRB  |  TRX  |  AAS  |  GCA  |  FBT  | IBSR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  BER  |  BEIE |  SCC  |  MSS  |  ACK  |  GCAA |  INTE |  INT  | IBCR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  DMBP |reserve|   EN  |  CS4  |  CS3  |  CS2  |  CS1  |  CS0  | ICCR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   A6  |   A5  |   A4  |   A3  |   A2  |   A1  |   A0  | IADR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   D7  |   D6  |   D5  |   D4  |   D3  |   D2  |   D1  |   D0  | IDAR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      IBSR              IO_IBSR.byte          IO_IBSR.bit.FBT
+                                              IO_IBSR.bit.GCA
+                                              IO_IBSR.bit.AAS
+                                              IO_IBSR.bit.TRX
+                                              IO_IBSR.bit.LRB
+                                              IO_IBSR.bit.AL
+                                              IO_IBSR.bit.RSC
+                                              IO_IBSR.bit.BB
+
+      IBCR              IO_IBCR.byte          IO_IBCR.bit.INT
+                                              IO_IBCR.bit.INTE
+                                              IO_IBCR.bit.GCAA
+                                              IO_IBCR.bit.ACK
+                                              IO_IBCR.bit.MSS
+                                              IO_IBCR.bit.SCC
+                                              IO_IBCR.bit.BEIE
+                                              IO_IBCR.bit.BER
+
+      ICCR              IO_ICCR.byte          IO_ICCR.bit.EN
+                                              IO_ICCR.bit.DMBP
+
+      IADR              IO_IADR.byte          IO_IADR.bit.A       [A0 - A6]
+
+      IDAR              IO_IDAR               none
+    --------------------------------------------------------------------------
+      Note 1: Always write 0 to bit6 of ICCR.
+      Note 2:  To prevent a wrong rewriting, the variable in two or more
+              bits is not defined.
+              Please substitute directly and set the value in the byte or
+              the word variable about rewriting two or more bits.
+
+<<PLL control>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   -   |   -   |   -   |reserve| SBCS  | PCS1  | PCS0  | PLLCR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+     PLLCR             IO_PLLCR.byte          IO_PLLCR.bit.SBCS
+    --------------------------------------------------------------------------
+      Note 1: Always write 0 to bit3 of PLLCR.
+      Note 2:  To prevent a wrong rewriting, the variable in two or more
+              bits is not defined.
+              Please substitute directly and set the value in the byte or
+              the word variable about rewriting two or more bits.
+
+<Remote control receiver>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   D7  |  D6   |  D5   |  D4   |  D3   |  D2   |  D1   |  D0   | RMN
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    | RMCLR |EDGSEL |RMISEL | RMPOL | RCK1  | RCK0  | FCK1  | FCK0  | RMC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    | COF   | RMSIG | NCDH  | NCDL  | FCDV  | RMOE  | RMFUL | RMEMP | RMS
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   -   |   -   |   -   | RMDS  |  CF2  |  CF1  |  CF0  | RMD
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  D7   |  D6   |  D5   |  D4   |  D3   |  D2   |  D1   |  D0   | RMCD0-5
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    | INTS3 | INTS2 | INTS1 | INTS0 |   -   | RMIST |  RIE  |  RIF  | RMCI
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      RMN               IO_RMN                none
+
+      RMC               IO_RMC.byte           IO_RMC.bit.RMPOL
+                                              IO_RMC.bit.RMISEL
+                                              IO_RMC.bit.EDGSEL
+                                              IO_RMC.bit.RMCLR
+
+      RMS               IO_RMS.byte           IO_RMS.bit.RMEMP
+                                              IO_RMS.bit.RMFUL
+                                              IO_RMS.bit.RMOE
+                                              IO_RMS.bit.FCDV
+                                              IO_RMS.bit.NCDL
+                                              IO_RMS.bit.NCDH
+                                              IO_RMS.bit.RMSIG
+                                              IO_RMS.bit.COF
+
+      RMD               IO_RMD.byte           IO_RMD.bit.CF       [CF0 - CF2]
+                                              IO_RMD.bit.RMDS
+
+      RMCD              IO_RMCDx(x:0-5)       none
+
+      RMCI              IO_RMCI.byte          IO_RMCI.bit.RIF
+                                              IO_RMCI.bit.RIE
+                                              IO_RMCI.bit.RMIST
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<LCD controller/driver>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  CSS  |  LCEN |  VSEL |   BK  |  MS1  |  MS0  |  FP1  |  FP0  | LCD
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |reserve|  CS1  |  CS0  |  SS4  |  SS3  |  SS2  |  SS1  |  SS0  | LOCR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+      VRAM (16 byte)
+    +-------+-------+-------+-------+
+    |  bit3 |  bit2 |  bit1 |  bit0 | SEG0
+    +-------+-------+-------+-------+
+    |  bit7 |  bit6 |  bit5 |  bit4 | SEG1
+    +-------+-------+-------+-------+
+    :       :       :       :       :  :
+    +-------+-------+-------+-------+
+    |  bit3 |  bit2 |  bit1 |  bit0 | SEG30
+    +-------+-------+-------+-------+
+    |  bit7 |  bit6 |  bit5 |  bit4 | SEG31
+    +-------+-------+-------+-------+
+       COM3    COM2    COM1    COM0
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      LCD               IO_LCD.byte           IO_LCD.bit.BK
+                                              IO_LCD.bit.VSEL
+                                              IO_LCD.bit.LCEN
+                                              IO_LCD.bit.CSS
+
+      LOCR              IO_LOCR               none
+
+      VRAM              IO_VRAM.word[m]       IO_VRAM.COM01.SEGx  [COM0 - COM1]
+                              (m:0 - 7)       IO_VRAM.COM012.SEGx [COM0 - COM2]
+                        IO_VRAM.byte[n]       IO_VRAM.COM0123.SEGx[COM0 - COM3]
+                              (n:0 - 15)                (x:0 - 31)
+    --------------------------------------------------------------------------
+      Note 1: Write 0 to bit7 of LOCR always.
+      Note 2: The relationship between bit access member and display mode of
+              VRAM is as follows.
+                 1/2 DUTY : IO_VRAM.COM01.SEGx
+                 1/3 DUTY : IO_VRAM.COM012.SEGx
+                 1/4 DUTY : IO_VRAM.COM0123.SEGx (x:0 - 31)
+      Note 3:  To prevent a wrong rewriting, the variable in two or more
+              bits is not defined.
+              Please substitute directly and set the value in the byte or
+              the word variable about rewriting two or more bits.
+
+<<Pull-up (option)>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    | PURn7 | PURn6 | PURn5 | PURn4 | PURn3 | PURn2 | PURn1 | PURn0 | PURCn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      PURCn(n=0-3,5-8)  IO_PURCn.byte         IO_PURCn.bit.PURnx(x:0 - 7)
+    --------------------------------------------------------------------------
+      Note: The following bits do not exist;
+            members to be accessed in bits are not declared.
+
+             PURC5:PUR55-PUR57
+             PURC8:PUR83-PUR87
+
+<<Flash memory interface>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  INTE | RDYINT|   WE  |  RDY  |reserve|reserve|   -   |reserve| FMCS
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      FMCS              IO_FMCS.byte          IO_FMCS.bit.RDY
+                                              IO_FMCS.bit.WE
+                                              IO_FMCS.bit.RDYINT
+                                              IO_FMCS.bit.INTE
+    --------------------------------------------------------------------------
+      Note: When using a simple assignment statement to write data to FMCS
+            (member IO_FMCS.byte), be sure to write 0 to reserved bit and
+            bit1.
+
+<<Interrupt controller>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  L31  |  L30  |  L21  |  L20  |  L11  |  L10  |  L01  |  L00  | ILR1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  L71  |  L70  |  L61  |  L60  |  L51  |  L50  |  L41  |  L40  | ILR2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  LB1  |  LB0  |  LA1  |  LA0  |  L91  |  L90  |  L81  |  L80  | ILR3
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  LF1  |  LF0  |  LE1  |  LE0  |  LD1  |  LD0  |  LC1  |  LC0  | ILR4
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable variable and member name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      ILR1              IO_ILR1               none
+
+      ILR2              IO_ILR2               none
+
+      ILR3              IO_ILR3               none
+
+      ILR4              IO_ILR4               none
+    --------------------------------------------------------------------------
+
+<<Revision career>>
+ VERSION 0.1 2003.04.18 - New release(Only the header file for C)
+ VERSION 0.2 2003.04.25 - The error in writing of a variable definition was
+                          corrected.(LOCR,LCD)
+                        - Plural bit variables are deleted for the
+                          mis-rewriting prevention.
+                         (register:SYCC,TBTC,WPCR,EIC0,EIC1,EIC2,EIC3,SMR,
+                                   TnCR0,TnCR1,ADC0,CNTR0,CNTR1,SMC0,ICCR,
+                                   PLLCR,RMC, and RMCI)
+                        - The member name of the RMD register was changed.
+                         (IO_RMD.bit.CF012 -> IO_RMD.bit.CF)
+                        (Changed file) _mb89490.h , _r89490.h
+                        - ioreg.txt(USERS MANUAL for C) New release
+ VERSION 0.3 2003.09.30 - Only the FLASH series defined the FMCS register.
+                        - The method of specifying the section was changed.
+                        - Bit6 of the ICCR register was corrected to the
+                          reservation bit.
+                        - Note of the PLLCR register was corrected.
+                        - The LOCR register was added.
+                        (Changed file) _ffmc8l.h , _mb89490.h ,
+                                       ioreg.txt(USERS MANUAL for C)
+ VERSION 1.0 2004.02.20 - The number of versions was updated.
+                        - Directory information was updated.
+                        (Changed file) ioreg.txt(USERS MANUAL for C)
+
+
+
+
+
+
++-----------------------------------------------------------------------------+
+| - The contents of this document are subject to change without notice.       |
+|   Customers are advised to consult with sales representatives before        |
+|   ordering.                                                                 |
+| - The information, such as descriptions of function and application circuit |
+|   examples, in this document are presented solely for the purpose of        |
+|   reference to show examples of operations and uses of FUJITSU              |
+|   semiconductor device; FUJITSU does not warrant proper operation of the    |
+|   device with respect to use based on such information. When you develop    |
+|   equipment incorporating the device based on such information, you must    |
+|   assume any responsibility arising out of such use of the information.     |
+|   FUJITSU assumes no liability for any damages whatsoever arising out of    |
+|   the use of the information.                                               |
+| - Any information in this document, including descriptions of function and  |
+|   schematic diagrams, shall not be construed as license of the use or       |
+|   exercise of any intellectual property right, such as patent right or      |
+|   copyright, or any other right of FUJITSU or any third party or does       |
+|   FUJITSU warrant non-infringement of any third-party's intellectual        |
+|   property right or other right by using such information. FUJITSU assumes  |
+|   no liability for any infringement of the intellectual property rights or  |
+|   other rights of third parties which would result from the use of          |
+|   information contained herein.                                             |
+| - The products described in this document are designed, developed and       |
+|   manufactured as contemplated for general use, including without           |
+|   limitation, ordinary industrial use, general office use, personal use,    |
+|   and household use, but are not designed, developed and manufactured as    |
+|   contemplated (1) for use accompanying fatal risks or dangers that, unless |
+|   extremely high safety is secured, could have a serious effect to the      |
+|   public, and could lead directly to death, personal injury, severe         |
+|   physical damage or other loss (i.e., nuclear reaction control in nuclear  |
+|   facility, aircraft flight control, air traffic control, mass transport    |
+|   control, medical life support system, missile launch control in weapon    |
+|   system), or (2) for use requiring extremely high reliability              |
+|   (i.e., submersible repeater and artificial satellite). Please note that   |
+|   FUJITSU will not be liable against you and/or any third party for any     |
+|   claims or damages arising in connection with above-mentioned uses of the  |
+|   products.                                                                 |
+| - Any semiconductor devices have an inherent chance of failure. You must    |
+|   protect against injury, damage or loss from such failures by              |
+|   incorporating safety design measures into your facility and equipment     |
+|   such as redundancy, fire protection, and prevention of over-current       |
+|   levels and other abnormal operating conditions.                           |
+| - Exportation/release of any products described in this document may        |
+|   require necessary procedures in accordance with the regulations of the    |
+|   Foreign Exchange and Foreign Trade Control Law of Japan and/or US export  |
+|   control laws.                                                             |
++-----------------------------------------------------------------------------+
+ (C)2008  FUJITSU LIMITED Printed in Japan

@@ -1,0 +1,142 @@
+Usage  :   fcc896s [options...] filename [filename...]
+
+[EXECUTION CONTROL OPTION]
+<option>               <mean>                                         <default>
+-c                  :  The processing until assembling is executed
+                       and the result is output to a file '*.obj'.
+-E                  :  Only the preprocessing is executed and the
+                       result is output to a standard output.
+-P                  :  Only the preprocessing is executed and the
+                       result is output to a file '*.i'.
+-S                  :  The processing until compiling is executed
+                       and the result is output to a file '*.asm'.
+
+[PRE-PROCESSOR OPTION]
+-B                  :  Allow the C++ style comments.
+-C                  :  The annotation is left for the preprocessing
+                       result.
+-D  name[=tokens ]  :  Macro 'name' is defined.
+-H                  :  The path name of taken include-file is output
+                       to a standard output.
+-I  dir             :  The directory which retrieves include-file is
+                       specified.
+-U  name            :  Macro 'name' definition is canceled.
+
+[OUTPUT INFORMATION CONTROL OPTION]
+-cmsg               :  Generate the complete-message.
+-cwno               :  When occurring a warning, the compier return 1.
+-help               :  The option list is output to a standard output.
+-INF  LINENO        :  The line-number of the corresponding C source
+                       is inserted in the assembler source.
+                       This option cannot be specified at the same time
+                       as option SRCIN.
+-INF  LIST          :  The assembly list is generated.
+-INF  SRCIN         :  The corresponding C source is inserted in the
+                       assembler source.
+                       This option cannot be specified at the same time
+                       as option LINENO.
+-INF  STACK[=filename]
+                    :  The generation of the stack use amount
+                       information file is specified.
+-o  pathname        :  The result is output to a file 'pathname'.
+-V                  :  Version information on the executed tools is
+                       output to a standard output.
+-w  {0-8}           :  The output level of the warning message is      (1)
+                       specified.
+
+[LANGUAGE SPECIFICATION CONTROL OPTION]
+-J  {a|c|n}         :  The language specification level which the      (a)
+                       compiler interprets is specified.
+-K  NO_REDUCED_TYPE_OPERATION :
+                       disable the use of ANSI standard non-conforming
+                       specification
+-K  NO_REDUCED_TYPE_ARGUMENT :
+                       disable the use of ANSI standard non-conforming
+                       specification
+-K  {FCONST|DCONST} :  The type of the real number constant without    (DCONST)
+                       the suffix is specified.
+-K  NOINTLIB        :  The interruption function does not progress
+                       in-line.
+-K  NOVOLATILE      :  When '__io' is specified, it is not regarded as
+                       'volatile'.
+-K  REALOS          :  The ITRON system call function progresses in-line.
+-K  {SBIT|UBIT}     :  The bit field of mere int is either signed      (UBIT)
+                       or unsigned isspecified.
+-K  {SCHAR|UCHAR}   :  Mere char is either signed or unsigned is       (UCHAR)
+                       specified.
+-kanji  {EUC|SJIS}  :  The Japanese code type to which compiler        (SJIS)
+                       can be recognized.
+
+[OPTIMIZATION OPTION]
+-K  {SIZE|SPEED}    :  The size/the speed valuing optimization is
+                       selected.
+-O  [0-4]           :  General-purpose optimization is specified.      (2)
+-K  ADDSP           :  Releases actual argument areas altogether.
+-K  EOPT            :  Optimization to which the order of evaluating
+                       the operation is changed is done.
+-K  LIB             :  A standard function progresses in-line. Or, it
+                       is substituted for other functions which do the
+                       same operation.
+-K  NOALIAS         :  It is optimized by the condition by there is no
+                       different pointer which indicates the same area.
+-K  NOUNROLL        :  The loop-unroll optimization is controlled.
+-x  func[,fun2...]  :  An in-line of function development is specified.
+-xauto  [size]      :  The function with a logical line of size lines  (30)
+                       or less is targeted about an in-line development.
+
+[OUTPUT CONTROL OPTION]
+-cpu MB91***        :  Specify the cpu number.                        (MB89600)
+-s  defname=newname[,attr[,address]]
+                    :  The section name is changed.
+
+[DEBUG INFORMATION OPTION]
+-g                  :  Information necessary for debugging is added
+                       to the object.
+
+[COMMAND OPTION]
+-T  item,arg1[,arg2...]
+                    :  The argument is passed to the tool.
+-Y  item,dir        :  The position of 'item' is changed to 'dir'.
+
+[LINKER OPTION]
+-e  symbol          :  The entry is specified.                        (start)
+-L  path1[,path2,...]
+                    :  The library path is specified.                 ($LIB896)
+-l  lib1[,lib2,...]
+                    :  The library file name is specified.
+-m                  :  The map file is output.
+-ra  param          :  The RAM area is specified.
+-ro  param          :  The ROM area is specified.
+-sc  param          :  The section arrangement is specified.
+                                                          (IOPORT=0,*=0x1000)
+-startup  file      :  The startup-file name is specified.
+                                                ($FETOOL/lib/896/startup.obj)
+{OPTION FILE OPTION]
+-f  filename        :  The option file is specified.
+-Xdof               :  Reading the default option file is controlled.
+
+<Notes>
+        The fcc896s links the following library and the startup-routine.
+        (${LIB896}/lib896.lib,${LIB896}/startup.obj)
+
+        Either of p,c,a or l can be set in item. It means cpps,ccoms,
+        fasm896s or flnk896s.
+
+        As for the order of retrieving include-file, the file with
+        the name enclosed by a double quotation mark is retrieved
+        first in the directory of the file with the line of #include.
+        Next is retrieved in the directory specified by option '-I'.
+        A standard directory is retrieved at the end.
+
+        The directory of the file with the #include line is not
+        retrieved at include-file of the name enclosed with <>.
+
+        After all options of the command line are processed, the
+        compilation work is done.
+
+        When the option of the contradicted meaning is described, the
+        last option becomes effective.
+        Please refer to the manual for the '-D'/'-U' option.
+
+        Option '-E/-P/-S/-c' are given to priority in following the
+        order. -E > -P > -S > -c

@@ -1,0 +1,10 @@
+{
+	"f2mc_workbench.project.importWsp": "导入",
+	"f2mc_workbench.project.refresh": "刷新",
+	"f2mc_workbench.project.build": "编译",
+	"f2mc_workbench.project.addFile": "添加文件",
+	"f2mc_workbench.project.addFolder": "添加文件夹",
+	"f2mc_workbench.project.save_all": "全部保存",
+	"f2mc_workbench.project.clean": "清理",
+	"f2mc_workbench.project.download": "下载"
+}
