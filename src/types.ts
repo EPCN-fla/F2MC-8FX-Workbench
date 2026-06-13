@@ -12,6 +12,7 @@ export interface F2mcProjectConfig {
 export interface F2mcProjectInfo {
 	name: string;
 	path?: string;
+	isActive?: boolean;
 	files: string[];
 	members: F2mcProjectMember[];
 	optionFile?: string;

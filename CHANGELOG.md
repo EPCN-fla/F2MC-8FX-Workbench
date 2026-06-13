@@ -6,6 +6,17 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.0.2]
+
+**新增**:
+  - 资源目录支持拖拽改变顺序
+  - 资源目录中各节点添加右键功能菜单，可以增减/移动成员
+
+**修复**:
+  - 工作区和项目保存时，部分字段缺少信息，导致无法在 SOFTUNE 打开
+
+***
+
 ### [v0.0.1]
 
-- Initial release
+- 初次提交

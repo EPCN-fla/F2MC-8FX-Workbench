@@ -42,7 +42,9 @@ export class F2mcProjectNode extends vscode.TreeItem {
 		this.kind = init.kind;
 		this.project = init.project;
 		this.member = init.member;
-		this.contextValue = `f2mc.${init.kind}`;
+		this.contextValue = init.kind === 'project' && init.project?.isActive
+			? 'f2mc.project.active'
+			: `f2mc.${init.kind}`;
 		this.children = init.children ?? [];
 
 		if (init.iconPath) {
@@ -69,6 +71,8 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 	public readonly dropMimeTypes = ['application/vnd.code.tree.f2mcProjectTree'];
 	private readonly onDidChangeTreeDataEmitter = new vscode.EventEmitter<F2mcProjectNode | undefined | null | void>();
 	public readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
+	private readonly onDidChangeProjectConfigEmitter = new vscode.EventEmitter<F2mcProjectConfig>();
+	public readonly onDidChangeProjectConfig = this.onDidChangeProjectConfigEmitter.event;
 	private config: F2mcProjectConfig | undefined;
 
 	public constructor(private readonly extensionPath: string) {
@@ -106,6 +110,7 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 		}
 		syncProjectFileLists(project);
 		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
 	}
 
 	public addFolder(folderName: string, target?: F2mcProjectNode): void {
@@ -119,23 +124,91 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 			kind: 'folder',
 			children: []
 		};
-		project.members.push(member);
+		const targetSiblings = target?.member
+			? findOwnerChildren(project.members, target.member) ?? project.members
+			: project.members;
+		const targetIndex = target?.member ? targetSiblings.indexOf(target.member) : -1;
+		targetSiblings.splice(targetIndex >= 0 ? targetIndex + 1 : targetSiblings.length, 0, member);
 		syncProjectFileLists(project);
 		this.onDidChangeTreeDataEmitter.fire(target);
 		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
 	}
 
-	public handleDrag(source: readonly F2mcProjectNode[], dataTransfer: vscode.DataTransfer): void {
-		const movableNodes = source.filter(node => Boolean(node.project && node.member));
-		if (movableNodes.length > 0) {
-			dataTransfer.set(this.dragMimeTypes[0], new vscode.DataTransferItem(movableNodes));
+	public addProject(project: F2mcProjectInfo): void {
+		if (!this.config || this.config.projects.some(existingProject => isSamePath(existingProject.path, project.path))) {
+			return;
+		}
+
+		if (!this.config.projects.some(existingProject => existingProject.isActive)) {
+			project.isActive = true;
+		}
+		this.config.projects.push(project);
+		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
+	}
+
+	public setActiveProject(project: F2mcProjectInfo): void {
+		if (!this.config || !this.config.projects.includes(project)) {
+			return;
+		}
+
+		for (const existingProject of this.config.projects) {
+			existingProject.isActive = existingProject === project;
+		}
+		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
+	}
+
+	public removeNode(node: F2mcProjectNode): void {
+		if (node.kind === 'project' && node.project) {
+			this.removeProject(node.project);
+			return;
+		}
+
+		if ((node.kind === 'folder' || node.kind === 'file') && node.project && node.member) {
+			this.removeMember(node.project, node.member);
 		}
 	}
 
+	public moveNode(node: F2mcProjectNode, direction: -1 | 1): void {
+		if (!node.project || !node.member) {
+			return;
+		}
+
+		const siblings = findOwnerChildren(node.project.members, node.member);
+		if (!siblings) {
+			return;
+		}
+
+		const index = siblings.indexOf(node.member);
+		const nextIndex = index + direction;
+		if (index < 0 || nextIndex < 0 || nextIndex >= siblings.length) {
+			return;
+		}
+
+		[siblings[index], siblings[nextIndex]] = [siblings[nextIndex], siblings[index]];
+		syncProjectFileLists(node.project);
+		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
+	}
+
+	public handleDrag(source: readonly F2mcProjectNode[], dataTransfer: vscode.DataTransfer): void {
+		if (source.length === 0 || source.some(node => !isDraggableProjectMemberNode(node))) {
+			throw new vscode.CancellationError();
+		}
+
+		dataTransfer.set(this.dragMimeTypes[0], new vscode.DataTransferItem(source));
+	}
+
 	public handleDrop(target: F2mcProjectNode | undefined, dataTransfer: vscode.DataTransfer): void {
+		if (target && !isValidProjectMemberDropTarget(target)) {
+			return;
+		}
+
 		const transferItem = dataTransfer.get(this.dragMimeTypes[0]);
 		const sourceNodes = transferItem?.value as F2mcProjectNode[] | undefined;
-		if (!sourceNodes || sourceNodes.length === 0) {
+		if (!sourceNodes || sourceNodes.length === 0 || sourceNodes.some(node => !isDraggableProjectMemberNode(node))) {
 			return;
 		}
 
@@ -151,6 +224,7 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 				syncProjectFileLists(project);
 			}
 			this.onDidChangeTreeDataEmitter.fire();
+			this.fireProjectConfigChanged();
 		}
 	}
 
@@ -189,22 +263,75 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 		const rootPath = this.config?.rootPath ?? '';
 		const projectPath = project.path ? resolvePath(project.path, rootPath) : undefined;
 		const children = this.createProjectChildren(project);
-		return new F2mcProjectNode({
-			label: createProjectLabel(project),
+		const label = createProjectLabel(project);
+		const node = new F2mcProjectNode({
+			label,
 			collapsibleState: vscode.TreeItemCollapsibleState.Collapsed,
 			kind: 'project',
 			resourcePath: projectPath,
 			children,
 			project
 		});
+
+		if (project.isActive) {
+			node.label = {
+				label,
+				highlights: [[0, label.length]]
+			};
+			node.description = 'Active';
+		}
+
+		return node;
 	}
 
 	private createProjectChildren(project: F2mcProjectInfo): F2mcProjectNode[] {
 		const rootPath = this.config?.rootPath ?? '';
 		const dependencyInfo = createProjectDependencyInfo(project, rootPath, this.extensionPath);
 		return project.members.length > 0
-			? sortProjectMembers(project.members).map(member => createMemberNode(member, dependencyInfo))
+			? orderProjectMembersForTree(project.members).map(member => createMemberNode(member, dependencyInfo))
 			: project.files.map(file => createFileNodeWithDependencies(resolvePath(file, rootPath), dependencyInfo));
+	}
+
+	private removeProject(project: F2mcProjectInfo): void {
+		if (!this.config) {
+			return;
+		}
+
+		const index = this.config.projects.indexOf(project);
+		if (index < 0) {
+			return;
+		}
+
+		const wasActive = project.isActive;
+		this.config.projects.splice(index, 1);
+		if (wasActive && this.config.projects.length > 0) {
+			this.config.projects[Math.min(index, this.config.projects.length - 1)].isActive = true;
+		}
+		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
+	}
+
+	private removeMember(project: F2mcProjectInfo, member: F2mcProjectMember): void {
+		const siblings = findOwnerChildren(project.members, member);
+		if (!siblings) {
+			return;
+		}
+
+		const index = siblings.indexOf(member);
+		if (index < 0) {
+			return;
+		}
+
+		siblings.splice(index, 1);
+		syncProjectFileLists(project);
+		this.onDidChangeTreeDataEmitter.fire();
+		this.fireProjectConfigChanged();
+	}
+
+	private fireProjectConfigChanged(): void {
+		if (this.config) {
+			this.onDidChangeProjectConfigEmitter.fire(this.config);
+		}
 	}
 
 	private moveMember(sourceNode: F2mcProjectNode, target: F2mcProjectNode | undefined): boolean {
@@ -241,6 +368,25 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 		targetChildren.splice(Math.max(0, adjustedTargetIndex), 0, sourceMember);
 		return true;
 	}
+}
+
+function isDraggableProjectMemberNode(node: F2mcProjectNode): boolean {
+	return Boolean(node.project && node.member && (node.kind === 'folder' || node.kind === 'file'));
+}
+
+function isValidProjectMemberDropTarget(node: F2mcProjectNode): boolean {
+	return node.kind === 'project' || isDraggableProjectMemberNode(node);
+}
+
+function isSamePath(left: string | undefined, right: string | undefined): boolean {
+	return Boolean(left && right && path.normalize(left).toLowerCase() === path.normalize(right).toLowerCase());
+}
+
+function orderProjectMembersForTree(members: F2mcProjectMember[]): F2mcProjectMember[] {
+	return [
+		...members.filter(member => member.kind === 'folder'),
+		...members.filter(member => member.kind === 'file')
+	];
 }
 
 function createImportNode(): F2mcProjectNode {
@@ -296,26 +442,6 @@ function createProjectLabel(project: F2mcProjectInfo): string {
 	const loadModuleName = project.loadModule ? path.basename(project.loadModule) : `${project.name}.abs`;
 	const projectFileName = project.path ? path.basename(project.path) : `${project.name}.prj`;
 	return `${loadModuleName} - "${projectFileName}"`;
-}
-
-function sortProjectMembers(members: F2mcProjectMember[]): F2mcProjectMember[] {
-	return [...members].sort((left, right) => getProjectMemberOrder(left) - getProjectMemberOrder(right));
-}
-
-function getProjectMemberOrder(member: F2mcProjectMember): number {
-	if (member.kind === 'folder' && member.name === SOURCE_FILES_FOLDER_NAME) {
-		return 0;
-	}
-
-	if (member.kind === 'folder' && member.name === INCLUDE_FILES_FOLDER_NAME) {
-		return 1;
-	}
-
-	if (member.kind === 'file') {
-		return 2;
-	}
-
-	return 3;
 }
 
 function createProjectDependencyInfo(project: F2mcProjectInfo, rootPath: string, extensionPath: string): ProjectDependencyInfo {

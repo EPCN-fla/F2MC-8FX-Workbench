@@ -25,15 +25,19 @@ async function saveProjectFile(project: F2mcProjectInfo): Promise<void> {
 
 async function saveWorkspaceFile(config: F2mcProjectConfig): Promise<void> {
 	const content = await readTextFile(config.wspPath);
-	const activeProject = config.projects.find(project => project.path);
+	const activeProject = config.projects.find(project => project.isActive && project.path) ?? config.projects.find(project => project.path);
 	if (!activeProject?.path) {
 		return;
 	}
 
-	const relativeProjectPath = toProjectRelativePath(activeProject.path, config.rootPath);
+	const relativeActiveProjectPath = toProjectRelativePath(activeProject.path, config.rootPath);
+	const projectLines = config.projects
+		.filter(project => project.path)
+		.map((project, index) => `FILE-${index}=${toProjectRelativePath(project.path!, config.rootPath)}`);
 	const sectionLines = [
-		`ActivePrj=${relativeProjectPath}`,
-		`FILE-0=${relativeProjectPath}`
+		`Count=${projectLines.length}`,
+		...projectLines,
+		`ActivePrj=${relativeActiveProjectPath}`
 	];
 	const prjFileContent = replaceIniSection(content, 'PrjFile', sectionLines);
 	const nextContent = replaceIniSection(prjFileContent, 'DirInfo', [`WSP=${ensureTrailingBackslash(config.rootPath)}`]);
@@ -81,16 +85,17 @@ function ensureFinalNewline(content: string): string {
 }
 
 function createMemberSectionLines(members: F2mcProjectMember[], projectRootPath: string): string[] {
-	const lines: string[] = [];
-	let index = 0;
+	const memberLines: string[] = [];
+	let index = 1;
+	const orderedMembers = orderMembersForProjectFile(members);
 
-	for (const member of members) {
+	for (const member of orderedMembers) {
 		if (member.kind === 'folder') {
-			lines.push(`F${index}=0 f ${member.name}`);
+			memberLines.push(`F${index}=0 f ${member.name}`);
 			index += 1;
 			for (const child of member.children) {
 				if (child.kind === 'file' && child.path) {
-					lines.push(`F${index}=0 ${child.fileType ?? getFileType(child.path)} ${toProjectRelativePath(child.path, projectRootPath)}`);
+					memberLines.push(`F${index}=0 ${child.fileType ?? getFileType(child.path)} ${toProjectRelativePath(child.path, projectRootPath)}`);
 					index += 1;
 				}
 			}
@@ -98,12 +103,19 @@ function createMemberSectionLines(members: F2mcProjectMember[], projectRootPath:
 		}
 
 		if (member.path) {
-			lines.push(`F${index}=0 ${member.fileType ?? getFileType(member.path)} ${toProjectRelativePath(member.path, projectRootPath)}`);
+			memberLines.push(`F${index}=0 ${member.fileType ?? getFileType(member.path)} ${toProjectRelativePath(member.path, projectRootPath)}`);
 			index += 1;
 		}
 	}
 
-	return lines;
+	return [`F0=${memberLines.length}`, ...memberLines];
+}
+
+function orderMembersForProjectFile(members: F2mcProjectMember[]): F2mcProjectMember[] {
+	return [
+		...members.filter(member => member.kind === 'file'),
+		...members.filter(member => member.kind === 'folder')
+	];
 }
 
 function createConfigurationDirInfoLines(project: F2mcProjectInfo, projectRootPath: string): string[] {

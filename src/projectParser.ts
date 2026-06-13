@@ -13,22 +13,28 @@ export async function parseWspProject(wspPath: string): Promise<F2mcProjectConfi
 	const rootPath = path.dirname(wspPath);
 	const wspContent = await readTextFile(wspPath);
 	const activeProjectPath = resolveActiveProjectPath(wspContent, rootPath);
-	const project = activeProjectPath
-		? await parsePrjProject(activeProjectPath)
-		: createFallbackProject(wspPath);
+	const projectPaths = resolveProjectPaths(wspContent, rootPath);
+	const uniqueProjectPaths = [...new Set([...(activeProjectPath ? [activeProjectPath] : []), ...projectPaths])];
+	const projects = uniqueProjectPaths.length > 0
+		? await Promise.all(uniqueProjectPaths.map(projectPath => parsePrjProject(projectPath, isSamePath(projectPath, activeProjectPath))))
+		: [createFallbackProject(wspPath, true)];
+
+	if (!projects.some(project => project.isActive)) {
+		projects[0].isActive = true;
+	}
 
 	return {
 		wspPath,
 		rootPath,
-		projects: [project]
+		projects
 	};
 }
 
-async function parsePrjProject(prjPath: string): Promise<F2mcProjectInfo> {
+export async function parsePrjProject(prjPath: string, isActive = false): Promise<F2mcProjectInfo> {
 	const content = await readTextFile(prjPath);
 	const projectRootPath = path.dirname(prjPath);
 	const memberSection = readIniSection(content, 'MEMBER');
-	const members = parseMemberSection(memberSection, projectRootPath);
+	const members = orderProjectMembersForTree(parseMemberSection(memberSection, projectRootPath));
 	const optionFile = readOptionFile(content, projectRootPath);
 	const activeConfiguration = readActiveConfiguration(content);
 	const directories = activeConfiguration
@@ -40,6 +46,7 @@ async function parsePrjProject(prjPath: string): Promise<F2mcProjectInfo> {
 	return {
 		name: path.basename(prjPath, path.extname(prjPath)),
 		path: prjPath,
+		isActive,
 		files: collectMemberPaths(members),
 		members,
 		optionFile,
@@ -53,10 +60,11 @@ async function parsePrjProject(prjPath: string): Promise<F2mcProjectInfo> {
 	};
 }
 
-function createFallbackProject(wspPath: string): F2mcProjectInfo {
+function createFallbackProject(wspPath: string, isActive = false): F2mcProjectInfo {
 	return {
 		name: path.basename(wspPath, path.extname(wspPath)),
 		path: wspPath,
+		isActive,
 		files: [],
 		members: [],
 		sourceFiles: [],
@@ -76,6 +84,17 @@ function resolveActiveProjectPath(wspContent: string, rootPath: string): string 
 		.map(line => /^FILE-\d+\s*=\s*(.+)$/i.exec(line))
 		.find((match): match is RegExpExecArray => Boolean(match))?.[1];
 	return firstProject ? resolvePath(firstProject, rootPath) : undefined;
+}
+
+function resolveProjectPaths(wspContent: string, rootPath: string): string[] {
+	return readIniSection(wspContent, 'PrjFile')
+		.map(line => /^FILE-\d+\s*=\s*(.+)$/i.exec(line))
+		.filter((match): match is RegExpExecArray => Boolean(match))
+		.map(match => resolvePath(match[1].trim(), rootPath));
+}
+
+function isSamePath(left: string | undefined, right: string | undefined): boolean {
+	return Boolean(left && right && path.normalize(left).toLowerCase() === path.normalize(right).toLowerCase());
 }
 
 function readOptionFile(content: string, projectRootPath: string): string | undefined {
@@ -164,6 +183,13 @@ function parseMemberLine(line: string): ParsedMemberLine | undefined {
 		fileType: match[1],
 		value: match[2].trim()
 	};
+}
+
+function orderProjectMembersForTree(members: F2mcProjectMember[]): F2mcProjectMember[] {
+	return [
+		...members.filter(member => member.kind === 'folder'),
+		...members.filter(member => member.kind === 'file')
+	];
 }
 
 function collectFilesByTypeInFolder(members: F2mcProjectMember[], folderName: string, fileType: string): string[] {

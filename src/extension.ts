@@ -4,12 +4,12 @@ import * as vscode from 'vscode';
 
 import { runProjectTask } from './buildRunner';
 import { PROJECT_CONTEXT } from './constants';
-import { parseWspProject } from './projectParser';
+import { parsePrjProject, parseWspProject } from './projectParser';
 import { createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
 import { saveProjectFiles } from './projectWriter';
 import { F2mcSettingsTreeProvider } from './settingsTree';
-import type { F2mcProjectConfig } from './types';
+import type { BuildKind, F2mcProjectConfig } from './types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const treeProvider = new F2mcProjectTreeProvider(context.extensionPath);
@@ -26,6 +26,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 	const outputChannel = vscode.window.createOutputChannel('F2MC-8FX Build');
 	context.subscriptions.push(treeView, settingsTreeView, outputChannel);
+	context.subscriptions.push(treeProvider.onDidChangeProjectConfig(async config => {
+		try {
+			await persistProjectConfig(config);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			outputChannel.appendLine(`[project] 保存工程索引失败: ${message}`);
+			void vscode.window.showErrorMessage(`保存 F2MC-8FX 工程索引失败：${message}`);
+		}
+	}));
 
 	async function loadCurrentProject(showMessage = false): Promise<F2mcProjectConfig | undefined> {
 		const config = await discoverProjectConfig();
@@ -51,11 +60,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('f2mc_workbench.project.refresh', async () => {
 			await loadCurrentProject(true);
 		}),
-		vscode.commands.registerCommand('f2mc_workbench.project.build', async () => {
-			const config = await ensureProjectLoaded(loadCurrentProject);
-			if (config) {
-				await runProjectTask(config, 'build', outputChannel, context.extensionPath);
-			}
+		vscode.commands.registerCommand('f2mc_workbench.project.build', async (node?: F2mcProjectNode) => {
+			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'build', node);
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.addFile', async (node?: F2mcProjectNode) => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
@@ -77,16 +83,42 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				void vscode.window.showInformationMessage('已保存 F2MC-8FX 工程配置。');
 			}
 		}),
-		vscode.commands.registerCommand('f2mc_workbench.project.clean', async () => {
-			const config = await ensureProjectLoaded(loadCurrentProject);
-			if (config) {
-				await runProjectTask(config, 'clean', outputChannel, context.extensionPath);
-			}
+		vscode.commands.registerCommand('f2mc_workbench.project.clean', async (node?: F2mcProjectNode) => {
+			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'clean', node);
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.download', async () => {
-			const config = await ensureProjectLoaded(loadCurrentProject);
+			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'download');
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.addProject', async (node?: F2mcProjectNode) => {
+			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
 			if (config) {
-				await runProjectTask(config, 'download', outputChannel, context.extensionPath);
+				await addWorkspaceProject(treeProvider, config, node);
+			}
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.setActive', async (node?: F2mcProjectNode) => {
+			if (node?.project) {
+				treeProvider.setActiveProject(node.project);
+			}
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.removeNode', async (node?: F2mcProjectNode) => {
+			await removeProjectNode(treeProvider, node);
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.removeProject', async (node?: F2mcProjectNode) => {
+			await removeProjectNode(treeProvider, node);
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.openFile', async (node?: F2mcProjectNode) => {
+			if (node?.resourceUri) {
+				await vscode.commands.executeCommand('vscode.open', node.resourceUri);
+			}
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.moveUp', (node?: F2mcProjectNode) => {
+			if (node) {
+				treeProvider.moveNode(node, -1);
+			}
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.moveDown', (node?: F2mcProjectNode) => {
+			if (node) {
+				treeProvider.moveNode(node, 1);
 			}
 		})
 	);
@@ -158,10 +190,10 @@ async function addProjectFile(treeProvider: F2mcProjectTreeProvider, config: F2m
 
 async function addProjectFolder(treeProvider: F2mcProjectTreeProvider, _config: F2mcProjectConfig, node?: F2mcProjectNode): Promise<void> {
 	const folderName = await vscode.window.showInputBox({
-		title: '添加虚拟文件夹',
-		prompt: '请输入虚拟文件夹名称',
+		title: '创建新文件夹',
+		prompt: '请输入文件夹名称',
 		placeHolder: 'New Folder',
-		validateInput: value => value.trim().length > 0 ? undefined : '虚拟文件夹名称不能为空'
+		validateInput: value => value.trim().length > 0 ? undefined : '文件夹名称不能为空'
 	});
 
 	if (!folderName) {
@@ -169,6 +201,69 @@ async function addProjectFolder(treeProvider: F2mcProjectTreeProvider, _config: 
 	}
 
 	treeProvider.addFolder(folderName.trim(), node);
+}
+
+async function addWorkspaceProject(treeProvider: F2mcProjectTreeProvider, config: F2mcProjectConfig, _node?: F2mcProjectNode): Promise<void> {
+	const selected = await vscode.window.showOpenDialog({
+		canSelectFiles: true,
+		canSelectFolders: false,
+		canSelectMany: false,
+		defaultUri: vscode.Uri.file(config.rootPath),
+		filters: {
+			'F2MC-8FX Project': ['prj'],
+			'All Files': ['*']
+		},
+		title: '添加项目'
+	});
+
+	if (!selected || selected.length === 0) {
+		return;
+	}
+
+	const project = await parsePrjProject(selected[0].fsPath);
+	treeProvider.addProject(project);
+}
+
+async function runProjectCommand(
+	treeProvider: F2mcProjectTreeProvider,
+	loader: () => Promise<F2mcProjectConfig | undefined>,
+	outputChannel: vscode.OutputChannel,
+	extensionPath: string,
+	kind: BuildKind,
+	node?: F2mcProjectNode
+): Promise<void> {
+	const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loader);
+	if (!config) {
+		return;
+	}
+
+	const taskConfig = node?.project
+		? {
+			...config,
+			projects: config.projects.map(project => ({
+				...project,
+				isActive: project === node.project
+			}))
+		}
+		: config;
+	await runProjectTask(taskConfig, kind, outputChannel, extensionPath);
+}
+
+async function removeProjectNode(treeProvider: F2mcProjectTreeProvider, node?: F2mcProjectNode): Promise<void> {
+	if (!node) {
+		return;
+	}
+
+	const label = typeof node.label === 'string' ? node.label : node.label?.label ?? '所选节点';
+	const isProject = node.kind === 'project';
+	const message = isProject
+		? `确认移除项目“${label}”吗？`
+		: `确认移除“${label}”吗？本地文件仍保留`;
+	const confirm = '移除';
+	const choice = await vscode.window.showWarningMessage(message, { modal: true }, confirm);
+	if (choice === confirm) {
+		treeProvider.removeNode(node);
+	}
 }
 
 async function ensureProjectLoaded(loader: () => Promise<F2mcProjectConfig | undefined>): Promise<F2mcProjectConfig | undefined> {

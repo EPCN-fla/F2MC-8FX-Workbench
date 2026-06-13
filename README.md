@@ -27,3 +27,37 @@
 - [x] 支持增减项目文件，创建虚拟文件夹等
 - [ ] 支持编译器参数修改
 - [ ] 支持烧录器，实现烧录和在线仿真功能
+
+## 🙋 协助开发
+
+欢迎各位对本插件进行功能完善、拓展。
+
+以下是开发环境搭建流程：
+
+> 💡 **注意**
+> 请确保你已经安装了以下软件：
+> - Python (>= 3.10)
+> - Microsoft Visual Studio & Desktop development with C++ (>= 2017)
+
+1. 安装 *NodeJS*（推荐使用 nvm 工具，版本选择 v20.20.2）
+2. 启用 *yarn* 包管理工具
+   ```shell
+   corepack enable yarn
+   ```
+3. 安装 *vsce*
+   ```shell
+   yarn global add @vscode/vsce
+   ```
+4. Clone 仓库，在根目录下执行
+
+   ```shell
+   yarn install
+   ```
+5. 使用 VS Code 打开工程，按 **F5** 进行调试
+
+6. 在根目录下执行
+
+   ```shell
+   vsce package --yarn
+   ```
+   完成打包

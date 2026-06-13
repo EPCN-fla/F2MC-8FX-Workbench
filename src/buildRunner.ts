@@ -88,7 +88,7 @@ async function resolveBuildCommand(config: F2mcProjectConfig, kind: BuildKind, e
 }
 
 async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, extensionPath: string): Promise<CommandSpec | undefined> {
-	const project = config.projects[0];
+	const project = getActiveProject(config);
 	if (!project?.path) {
 		return undefined;
 	}
@@ -384,13 +384,17 @@ function joinScriptLines(lines: string[]): string {
 }
 
 function replaceVariables(template: string, config: F2mcProjectConfig, kind: BuildKind): string {
-	const firstProject = config.projects[0];
-	const projectPath = firstProject?.path ?? '';
+	const activeProject = getActiveProject(config);
+	const projectPath = activeProject?.path ?? '';
 	return template
 		.replace(/\$\{kind\}/g, kind)
 		.replace(/\$\{workspaceFolder\}/g, config.rootPath)
 		.replace(/\$\{wspPath\}/g, config.wspPath)
 		.replace(/\$\{projectPath\}/g, projectPath)
-		.replace(/\$\{projectName\}/g, firstProject?.name ?? '')
+		.replace(/\$\{projectName\}/g, activeProject?.name ?? '')
 		.replace(/\$\{projectDir\}/g, projectPath ? path.dirname(projectPath) : config.rootPath);
+}
+
+function getActiveProject(config: F2mcProjectConfig): F2mcProjectInfo | undefined {
+	return config.projects.find(project => project.isActive) ?? config.projects[0];
 }
