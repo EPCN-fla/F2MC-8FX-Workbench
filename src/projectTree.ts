@@ -83,6 +83,10 @@ export class F2mcProjectTreeProvider implements vscode.TreeDataProvider<F2mcProj
 		this.onDidChangeTreeDataEmitter.fire();
 	}
 
+	public refresh(): void {
+		this.onDidChangeTreeDataEmitter.fire();
+	}
+
 	public getTreeItem(element: F2mcProjectNode): vscode.TreeItem {
 		return element;
 	}

@@ -6,7 +6,7 @@
     "F2MC",
     "F2MC-8FX"
   ],
-  "version": "0.0.2",
+  "version": "0.0.3",
   "publisher": "Fla1337",
   "engines": {
     "vscode": "^1.123.0"

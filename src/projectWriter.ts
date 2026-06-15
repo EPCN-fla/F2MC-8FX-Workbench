@@ -17,9 +17,15 @@ async function saveProjectFile(project: F2mcProjectInfo): Promise<void> {
 	const content = await readTextFile(project.path);
 	const memberContent = replaceIniSection(content, 'MEMBER', createMemberSectionLines(project.members, projectRootPath));
 	const dirInfoContent = replaceIniSection(memberContent, 'DirInfo', [`PRJ=${ensureTrailingBackslash(projectRootPath)}`]);
-	const nextContent = project.activeConfiguration && project.directories
+	const configurationContent = project.activeConfiguration && project.directories
 		? replaceIniSection(dirInfoContent, `DirInfo-${project.activeConfiguration}`, createConfigurationDirInfoLines(project, projectRootPath))
 		: dirInfoContent;
+	const cpuContent = project.activeConfiguration && project.cpuName
+		? replaceCpuNameInConfiguration(configurationContent, project)
+		: configurationContent;
+	const nextContent = project.activeConfiguration && project.loadModule
+		? replaceLoadModuleInConfiguration(cpuContent, project, projectRootPath)
+		: cpuContent;
 	await writeTextFile(project.path, nextContent);
 }
 
@@ -42,6 +48,79 @@ async function saveWorkspaceFile(config: F2mcProjectConfig): Promise<void> {
 	const prjFileContent = replaceIniSection(content, 'PrjFile', sectionLines);
 	const nextContent = replaceIniSection(prjFileContent, 'DirInfo', [`WSP=${ensureTrailingBackslash(config.rootPath)}`]);
 	await writeTextFile(config.wspPath, nextContent);
+}
+
+function replaceCpuNameInConfiguration(content: string, project: F2mcProjectInfo): string {
+	if (!project.activeConfiguration || !project.cpuName) {
+		return content;
+	}
+
+	const sectionName = `CPUTYPE-${project.activeConfiguration}`;
+	const sectionLines = readIniSection(content, sectionName);
+	let didReplace = false;
+	const nextLines = sectionLines.map(line => {
+		if (!/^CpuName\s*=/i.test(line.trim())) {
+			return line;
+		}
+
+		didReplace = true;
+		return `CpuName=${project.cpuName}`;
+	});
+	if (!didReplace) {
+		nextLines.push(`CpuName=${project.cpuName}`);
+	}
+
+	return replaceIniSection(content, sectionName, nextLines);
+}
+
+function replaceLoadModuleInConfiguration(content: string, project: F2mcProjectInfo, projectRootPath: string): string {
+	if (!project.activeConfiguration || !project.loadModule) {
+		return content;
+	}
+
+	const sectionName = `MEMBER-${project.activeConfiguration}`;
+	const sectionLines = readIniSection(content, sectionName);
+	let didReplace = false;
+	const loadModulePath = toProjectRelativePath(project.loadModule, projectRootPath);
+	const nextLines = sectionLines.map(line => {
+		const match = /^(F\d+\s*=\s*\d+\s+m\s+(?:\d+\s+)?)(.+)$/i.exec(line.trim());
+		if (!match) {
+			return line;
+		}
+
+		didReplace = true;
+		return `${match[1]}${loadModulePath}`;
+	});
+
+	return didReplace ? replaceIniSection(content, sectionName, nextLines) : content;
+}
+
+function readIniSection(content: string, sectionName: string): string[] {
+	const lines = content.split(/\r?\n/);
+	const target = `[${sectionName.toLowerCase()}]`;
+	const sectionLines: string[] = [];
+	let inSection = false;
+
+	for (const rawLine of lines) {
+		const line = rawLine.trim();
+		if (!line) {
+			continue;
+		}
+
+		if (/^\[[^\]]+\]$/.test(line)) {
+			if (inSection) {
+				break;
+			}
+			inSection = line.toLowerCase() === target;
+			continue;
+		}
+
+		if (inSection) {
+			sectionLines.push(line);
+		}
+	}
+
+	return sectionLines;
 }
 
 function replaceIniSection(content: string, sectionName: string, sectionLines: string[]): string {

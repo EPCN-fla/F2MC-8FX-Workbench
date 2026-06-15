@@ -6,6 +6,14 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.0.3]
+
+**新增**:
+  - 支持项目自定义设置，如生成文件名称，编译文件目录等
+  - 支持项目切换单片机型号
+
+***
+
 ### [v0.0.2]
 
 **新增**:
