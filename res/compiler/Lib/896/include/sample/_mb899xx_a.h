@@ -1,0 +1,2346 @@
+/*
+ MB899xx Series I/O register declaration file V30L08
+ ALL RIGHTS RESERVED, COPYRIGHT (C) FUJITSU LIMITED 1998
+ LICENSED MATERIAL - PROGRAM PROPERTY OF FUJITSU LIMITED
+*/
+#include "_ffmc8ls.h"
+#include "_f8ldef.h"
+
+/******************************************************/
+/* Sample program for I/O variables of A/D converter. */
+/******************************************************/
+/* structure of ADC1 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89960_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_adc1 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89930_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	AD  ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	ADMV,1)
+		__UCHARBIT(	ADI ,1)
+		__UCHARBIT(	ANS ,3)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89960_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	AD  ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	ADMV,1)
+		__UCHARBIT(	ADI ,1)
+		__UCHARBIT(	ANS ,4)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	AD  ,1)
+		__UCHARBIT(	SIFM,1)
+		__UCHARBIT(	ADMV,1)
+		__UCHARBIT(	ADI ,1)
+		__UCHARBIT(	ANS ,4)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of ADC2 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89960_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_adc2 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89960_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EXT ,1)
+		__UCHARBIT(	ADMD,1)
+		__UCHARBIT(	ADIE,1)
+		__UCHARBIT(	ADCK,1)
+		__UCHARBIT(	TIM ,2)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89930_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EXT ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	ADIE,1)
+		__UCHARBIT(	ADCK,1)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EXT ,1)
+		__UCHARBIT(	ADMD,1)
+		__UCHARBIT(	ADIE,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EXT ,1)
+		__UCHARBIT(	ADMD,1)
+		__UCHARBIT(	ADIE,1)
+		__UCHARBIT(	ADCK,1)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of ADDH/ADDL*/
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89930_SERIES) || \
+    defined(__CPU_MB89960_SERIES)
+#macro io_add symbol
+	__WORD_MEM
+	__STRUCT_TYPE_B
+		__USHORTBIT(	DATA10,10)
+		__USHORTBIT_NONAME(     6)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of ADEN */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_aden symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	ADE0 ,1)
+		__UCHARBIT(	ADE1 ,1)
+		__UCHARBIT(	ADE2 ,1)
+		__UCHARBIT(	ADE3 ,1)
+		__UCHARBIT(	ADE4 ,1)
+		__UCHARBIT(	ADE5 ,1)
+		__UCHARBIT(	ADE6 ,1)
+		__UCHARBIT(	ADE7 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/****************************************************************/
+/* Sample program for data and control registers of 12-bit PPG. */
+/****************************************************************/
+/* structure of RCR21 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_rcr21 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	HSC ,6)
+		__UCHARBIT(	RCK ,2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of RCR22 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_rcr22 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	HSC ,6)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of RCR23 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_rcr23 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SCL ,6)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	RCEN,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of RCR24 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_rcr24 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SCL ,6)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*****************************************************/
+/* Sample program for I/O variable of input capture. */
+/*****************************************************/
+/* structure of ICCR */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_iccr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	ES0 ,1)
+		__UCHARBIT(	ES1 ,1)
+		__UCHARBIT(	SFTE,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	STG0,1)
+		__UCHARBIT(	STG1,1)
+		__UCHARBIT(	IS  ,1)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of ICIC */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_icic symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	CIR0,1)
+		__UCHARBIT(	CIR1,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	OVF0,1)
+		__UCHARBIT(	OVF1,1)
+		__UCHARBIT(	CIE0,1)
+		__UCHARBIT(	CIE1,1)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/******************************************************************/
+/* Sample program for data and control registers of 16-bit timer. */
+/******************************************************************/
+/* structure of TMCR */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES)
+#macro io_tmcr symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89910_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TCS  ,1)
+		__UCHARBIT(	TCIE ,1)
+		__UCHARBIT(	TCEF ,1)
+		__UCHARBIT(	TCS01,2)
+		__UCHARBIT(	TCR  ,1)
+		__UCHARBIT_NONAME(    2)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TCS01,2)
+		__UCHARBIT(	TMIR ,1)
+		__UCHARBIT(	TMIE ,1)
+		__UCHARBIT_NONAME(    2)
+		__UCHARBIT(	STCR ,1)
+		__UCHARBIT(	TMST ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+
+/********************************************************************/
+/* Sample program for data and control registers of 8/16-bit timer. */
+/********************************************************************/
+/* structure of TCCR */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_tccr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(    1)
+		__UCHARBIT(	EGDS ,2)
+		__UCHARBIT(	TCMSK,1)
+		__UCHARBIT(	CCMSK,1)
+		__UCHARBIT(	CPIEN,1)
+		__UCHARBIT(	CFCLR,1)
+		__UCHARBIT(	CPIF ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of TCR0 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_tcr0 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TSTR0,1)
+		__UCHARBIT(	TCS0 ,3)
+		__UCHARBIT(	CINV ,1)
+		__UCHARBIT(	T0IEN,1)
+		__UCHARBIT(	TFCR0,1)
+		__UCHARBIT(	TIF0 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of TCR1 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_tcr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TSTR1,1)
+		__UCHARBIT(	TCS1 ,3)
+		__UCHARBIT_NONAME(    1)
+		__UCHARBIT(	T1IEN,1)
+		__UCHARBIT(	TFCR1,1)
+		__UCHARBIT(	TIF1 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of TCR2 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_tcr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TSEL,1)
+		__UCHARBIT(	PEN ,1)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of TDR01 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_tdr01 symbol
+	__WORD_MEM
+	__STRUCT_TYPE_B
+		__UCHAR(	TDR1)
+		__UCHAR(	TDR0)
+	__STRUCT_TYPE_E(byte)
+#endm
+#endif
+
+/* structure of TCP */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_tcp symbol
+	__WORD_MEM
+	__STRUCT_TYPE_B
+		__UCHAR(	TCPH)
+		__UCHAR(	TCPL)
+	__STRUCT_TYPE_E(byte)
+#endm
+#endif
+
+/* structure of T1CR */
+#if defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_t1cr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	T1STR,1)
+		__UCHARBIT(	T1STP,1)
+		__UCHARBIT(	T1CS ,2)
+		__UCHARBIT(	T1OS ,2)
+		__UCHARBIT(	T1IE ,1)
+		__UCHARBIT(	T1IF ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of T2CR */
+#if defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_t2cr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	T2STR,1)
+		__UCHARBIT(	T2STP,1)
+		__UCHARBIT(	T2CS ,2)
+		__UCHARBIT_NONAME(    2)
+		__UCHARBIT(	T2IE ,1)
+		__UCHARBIT(	T2IF ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of T12DR */
+#if defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_t12dr symbol
+	__WORD_MEM
+	__STRUCT_TYPE_B
+		__UCHAR(	T2DR)
+		__UCHAR(	T1DR)
+	__STRUCT_TYPE_E(byte)
+#endm
+#endif
+
+
+/********************************************************/
+/* Sample program for I/O variables of 8-bit PWM timer. */
+/********************************************************/
+/* structure of CNTR */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89930_SERIES) || \
+    defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89950_SERIES) || \
+    defined(__CPU_MB89980_SERIES)
+#macro io_cntr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TIE ,1)
+		__UCHARBIT(	OE  ,1)
+		__UCHARBIT(	TIR ,1)
+		__UCHARBIT(	TPE ,1)
+		__UCHARBIT(	P   ,2)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	P_TX,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of CNTR1 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_cntr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SC2 ,2)
+		__UCHARBIT(	SC1 ,2)
+		__UCHARBIT(	P7M2,1)
+		__UCHARBIT(	P7M1,1)
+		__UCHARBIT(	PTX2,1)
+		__UCHARBIT(	PTX1,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#elif defined(__CPU_MB89940_SERIES)
+#macro io_cntr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TST ,1)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	CE  ,1)
+		__UCHARBIT(	P   ,2)
+		__UCHARBIT(	OE1 ,1)
+		__UCHARBIT(	OE2 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of CNTR2 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_cntr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TIE2,1)
+		__UCHARBIT(	TIE1,1)
+		__UCHARBIT(	TIR2,1)
+		__UCHARBIT(	TIR1,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	CK12,1)
+		__UCHARBIT(	TPE2,1)
+		__UCHARBIT(	TPE1,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of CNTR3 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_cntr3 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   4)
+		__UCHARBIT(	CH12,1)
+		__UCHARBIT(	OE3 ,1)
+		__UCHARBIT(	OE2 ,1)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*******************************************************************/
+/* Sample program for mode and data registers of 8-bit serial I/O. */
+/*******************************************************************/
+/* structure of SMR */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89950_SERIES) || \
+    defined(__CPU_MB89960_SERIES)
+#macro io_smr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SST ,1)
+		__UCHARBIT(	BDS ,1)
+		__UCHARBIT(	CKS ,2)
+		__UCHARBIT(	SOE ,1)
+		__UCHARBIT(	SCKE,1)
+		__UCHARBIT(	SIOE,1)
+		__UCHARBIT(	SIOF,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*****************************************************/
+/* Sample program for control registers of I/O port. */
+/*****************************************************/
+/* structure of PDR0 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_pdr0 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P00 ,1)
+		__UCHARBIT(	P01 ,1)
+		__UCHARBIT(	P02 ,1)
+		__UCHARBIT(	P03 ,1)
+		__UCHARBIT(	P04 ,1)
+		__UCHARBIT(	P05 ,1)
+		__UCHARBIT(	P06 ,1)
+		__UCHARBIT(	P07 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PDR1 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89950_SERIES) || \
+    defined(__CPU_MB89960_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_pdr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P10 ,1)
+		__UCHARBIT(	P11 ,1)
+		__UCHARBIT(	P12 ,1)
+		__UCHARBIT(	P13 ,1)
+		__UCHARBIT(	P14 ,1)
+		__UCHARBIT(	P15 ,1)
+		__UCHARBIT(	P16 ,1)
+		__UCHARBIT(	P17 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PDR2 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89950_SERIES) || \
+    defined(__CPU_MB89960_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_pdr2 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89950_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P20 ,1)
+		__UCHARBIT(	P21 ,1)
+		__UCHARBIT(	P22 ,1)
+		__UCHARBIT(	P23 ,1)
+		__UCHARBIT(	P24 ,1)
+		__UCHARBIT(	P25 ,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P20 ,1)
+		__UCHARBIT(	P21 ,1)
+		__UCHARBIT(	P22 ,1)
+		__UCHARBIT(	P23 ,1)
+		__UCHARBIT(	P24 ,1)
+		__UCHARBIT(	P25 ,1)
+		__UCHARBIT(	P26 ,1)
+		__UCHARBIT(	P27 ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of PDR3 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_pdr3 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89950_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P30 ,1)
+		__UCHARBIT(	P31 ,1)
+		__UCHARBIT(	P32 ,1)
+		__UCHARBIT(	P33 ,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89920_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P30 ,1)
+		__UCHARBIT(	P31 ,1)
+		__UCHARBIT(	P32 ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	UCCB,1)
+		__UCHARBIT(	SCCB,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89960_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P30 ,1)
+		__UCHARBIT(	P31 ,1)
+		__UCHARBIT(	P32 ,1)
+		__UCHARBIT(	P33 ,1)
+		__UCHARBIT(	P34 ,1)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89980_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P30 ,1)
+		__UCHARBIT(	P31 ,1)
+		__UCHARBIT(	P32 ,1)
+		__UCHARBIT_NONAME(   5)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P30 ,1)
+		__UCHARBIT(	P31 ,1)
+		__UCHARBIT(	P32 ,1)
+		__UCHARBIT(	P33 ,1)
+		__UCHARBIT(	P34 ,1)
+		__UCHARBIT(	P35 ,1)
+		__UCHARBIT(	P36 ,1)
+		__UCHARBIT(	P37 ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of PDR4 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_pdr4 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89910_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT_NONAME(   5)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89930_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT(	P43 ,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT(	P43 ,1)
+		__UCHARBIT(	P44 ,1)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89960_SERIES) || \
+      defined(__CPU_MB89990_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT(	P43 ,1)
+		__UCHARBIT(	P44 ,1)
+		__UCHARBIT(	P45 ,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89950_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT(	P43 ,1)
+		__UCHARBIT(	P44 ,1)
+		__UCHARBIT(	P45 ,1)
+		__UCHARBIT(	P46 ,1)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT(	P43 ,1)
+		__UCHARBIT(	P44 ,1)
+		__UCHARBIT(	P45 ,1)
+		__UCHARBIT(	P46 ,1)
+		__UCHARBIT(	P47 ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of PDR5 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_pdr5 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89910_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P50 ,1)
+		__UCHARBIT(	P51 ,1)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89930_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P50 ,1)
+		__UCHARBIT_NONAME(   7)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89980_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P50 ,1)
+		__UCHARBIT(	P51 ,1)
+		__UCHARBIT(	P52 ,1)
+		__UCHARBIT(	P53 ,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P50 ,1)
+		__UCHARBIT(	P51 ,1)
+		__UCHARBIT(	P52 ,1)
+		__UCHARBIT(	P53 ,1)
+		__UCHARBIT(	P54 ,1)
+		__UCHARBIT(	P55 ,1)
+		__UCHARBIT(	P56 ,1)
+		__UCHARBIT(	P57 ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of PDR6 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89980_SERIES)
+#macro io_pdr6 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89910_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P60 ,1)
+		__UCHARBIT(	P61 ,1)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89980_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P60 ,1)
+		__UCHARBIT(	P61 ,1)
+		__UCHARBIT(	P62 ,1)
+		__UCHARBIT(	P63 ,1)
+		__UCHARBIT(	P64 ,1)
+		__UCHARBIT(	P65 ,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P60 ,1)
+		__UCHARBIT(	P61 ,1)
+		__UCHARBIT(	P62 ,1)
+		__UCHARBIT(	P63 ,1)
+		__UCHARBIT(	P64 ,1)
+		__UCHARBIT(	P65 ,1)
+		__UCHARBIT(	P66 ,1)
+		__UCHARBIT(	P67 ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of PDR7 */
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_pdr7 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89980_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P70 ,1)
+		__UCHARBIT(	P71 ,1)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P70 ,1)
+		__UCHARBIT(	P71 ,1)
+		__UCHARBIT(	P72 ,1)
+		__UCHARBIT(	P73 ,1)
+		__UCHARBIT(	P74 ,1)
+		__UCHARBIT(	P75 ,1)
+		__UCHARBIT(	P76 ,1)
+		__UCHARBIT(	P77 ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of PDR8 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_pdr8 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P80 ,1)
+		__UCHARBIT(	P81 ,1)
+		__UCHARBIT(	P82 ,1)
+		__UCHARBIT(	P83 ,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PDR9 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_pdr9 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P90 ,1)
+		__UCHARBIT(	P91 ,1)
+		__UCHARBIT(	P92 ,1)
+		__UCHARBIT(	P93 ,1)
+		__UCHARBIT(	P94 ,1)
+		__UCHARBIT(	P95 ,1)
+		__UCHARBIT(	P96 ,1)
+		__UCHARBIT(	P97 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of ADE */
+#if defined(__CPU_MB89940_SERIES)
+#macro io_ade symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TEMPI,1)
+		__UCHARBIT(	FUELI,1)
+		__UCHARBIT_NONAME(    6)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/****************************************************************/
+/* Sample program for I/O variables of inter IIC bus interface. */
+/****************************************************************/
+/* structure of IBSR */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_ibsr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	FBT ,1)
+		__UCHARBIT(	GCA ,1)
+		__UCHARBIT(	AAS ,1)
+		__UCHARBIT(	TRX ,1)
+		__UCHARBIT(	LRB ,1)
+		__UCHARBIT(	AL  ,1)
+		__UCHARBIT(	RSC ,1)
+		__UCHARBIT(	BB  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of IBCR */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_ibcr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	INT ,1)
+		__UCHARBIT(	INTE,1)
+		__UCHARBIT(	GCAA,1)
+		__UCHARBIT(	ACK ,1)
+		__UCHARBIT(	MSS ,1)
+		__UCHARBIT(	SCC ,1)
+		__UCHARBIT(	BEIE,1)
+		__UCHARBIT(	BER ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of ICCR */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_iccr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	CS012,3)
+		__UCHARBIT(	CS34 ,2)
+		__UCHARBIT(	EN   ,1)
+		__UCHARBIT(	IBS  ,1)
+		__UCHARBIT(	DMBP ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of IADR */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_iadr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	A   ,7)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*****************************************************************/
+/* Sample program for control registers of LCD controler/driver. */
+/*****************************************************************/
+/* structure of LCR */
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_lcr symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	FP  ,2)
+		__UCHARBIT(	MS  ,2)
+		__UCHARBIT(	BK  ,1)
+		__UCHARBIT(	VSEL,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89950_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	FP  ,2)
+		__UCHARBIT(	MS  ,2)
+		__UCHARBIT(	BK  ,1)
+		__UCHARBIT(	VSEL,1)
+		__UCHARBIT(	PSEL,1)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	FP  ,2)
+		__UCHARBIT(	MS  ,2)
+		__UCHARBIT(	BK  ,1)
+		__UCHARBIT(	VSEL,1)
+		__UCHARBIT(	LCEN,1)
+		__UCHARBIT(	CSS ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of LCR2 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_lcr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   5)
+		__UCHARBIT(	COM ,2)
+		__UCHARBIT(	PE  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#elif defined(__CPU_MB89940_SERIES)
+#macro io_lcr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	S   ,3)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	C3  ,1)
+		__UCHARBIT(	OE  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#elif defined(__CPU_MB89980_SERIES)
+#macro io_lcr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	LS1 ,1)
+		__UCHARBIT(	LS2 ,1)
+		__UCHARBIT(	LS3 ,1)
+		__UCHARBIT(	LS4 ,1)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	SC3 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of LCR3 */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_lcr3 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	S0  ,1)
+		__UCHARBIT(	S1  ,1)
+		__UCHARBIT(	S2  ,1)
+		__UCHARBIT(	S3  ,1)
+		__UCHARBIT(	S4  ,1)
+		__UCHARBIT(	S5  ,1)
+		__UCHARBIT(	S60 ,1)
+		__UCHARBIT(	S61 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SEGR */
+#if defined(__CPU_MB89950_SERIES)
+#macro io_segr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SEG00,1)
+		__UCHARBIT(	SEG10,1)
+		__UCHARBIT(	SEG11,1)
+		__UCHARBIT(	SEG12,1)
+		__UCHARBIT(	SEG13,1)
+		__UCHARBIT(	SEG14,1)
+		__UCHARBIT(	SEG15,1)
+		__UCHARBIT_NONAME(    1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of VRAM */
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_vram  symbol
+#if defined(__CPU_MB89920_SERIES)
+	__WORD_MEM_A(7)
+	__BYTE_MEM_A(14)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM01( SEG0 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG1 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG2 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG3 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG4 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG5 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG6 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG7 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG8 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG9 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG10,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG11,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG12,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG13,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG14,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG15,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG16,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG17,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG18,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG19,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG20,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG21,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG22,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG23,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG24,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG25,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG26,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG27,2)
+		__UCHARBIT_NONAME(      2)
+	__STRUCT_TYPE_E(COM01)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM012(SEG0 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG1 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG2 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG3 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG4 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG5 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG6 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG7 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG8 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG9 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG10,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG11,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG12,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG13,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG14,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG15,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG16,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG17,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG18,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG19,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG20,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG21,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG22,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG23,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG24,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG25,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG26,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG27,3)
+		__UCHARBIT_NONAME(      1)
+	__STRUCT_TYPE_E(COM012)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM0123(SEG0 ,4)
+		__UCHARBIT_COM0123(SEG1 ,4)
+		__UCHARBIT_COM0123(SEG2 ,4)
+		__UCHARBIT_COM0123(SEG3 ,4)
+		__UCHARBIT_COM0123(SEG4 ,4)
+		__UCHARBIT_COM0123(SEG5 ,4)
+		__UCHARBIT_COM0123(SEG6 ,4)
+		__UCHARBIT_COM0123(SEG7 ,4)
+		__UCHARBIT_COM0123(SEG8 ,4)
+		__UCHARBIT_COM0123(SEG9 ,4)
+		__UCHARBIT_COM0123(SEG10,4)
+		__UCHARBIT_COM0123(SEG11,4)
+		__UCHARBIT_COM0123(SEG12,4)
+		__UCHARBIT_COM0123(SEG13,4)
+		__UCHARBIT_COM0123(SEG14,4)
+		__UCHARBIT_COM0123(SEG15,4)
+		__UCHARBIT_COM0123(SEG16,4)
+		__UCHARBIT_COM0123(SEG17,4)
+		__UCHARBIT_COM0123(SEG18,4)
+		__UCHARBIT_COM0123(SEG19,4)
+		__UCHARBIT_COM0123(SEG20,4)
+		__UCHARBIT_COM0123(SEG21,4)
+		__UCHARBIT_COM0123(SEG22,4)
+		__UCHARBIT_COM0123(SEG23,4)
+		__UCHARBIT_COM0123(SEG24,4)
+		__UCHARBIT_COM0123(SEG25,4)
+		__UCHARBIT_COM0123(SEG26,4)
+		__UCHARBIT_COM0123(SEG27,4)
+	__STRUCT_TYPE_E(COM0123)
+#elif defined(__CPU_MB89940_SERIES)
+	__WORD_MEM_A(4)
+	__BYTE_MEM_A(9)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM01( SEG0 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG1 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG2 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG3 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG4 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG5 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG6 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG7 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG8 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG9 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG10,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG11,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG12,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG13,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG14,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG15,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG16,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_NONAME(      4)
+	__STRUCT_TYPE_E(COM01)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM012(SEG0 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG1 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG2 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG3 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG4 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG5 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG6 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG7 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG8 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG9 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG10,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG11,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG12,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG13,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG14,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG15,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG16,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_NONAME(      4)
+	__STRUCT_TYPE_E(COM012)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM0123(SEG0 ,4)
+		__UCHARBIT_COM0123(SEG1 ,4)
+		__UCHARBIT_COM0123(SEG2 ,4)
+		__UCHARBIT_COM0123(SEG3 ,4)
+		__UCHARBIT_COM0123(SEG4 ,4)
+		__UCHARBIT_COM0123(SEG5 ,4)
+		__UCHARBIT_COM0123(SEG6 ,4)
+		__UCHARBIT_COM0123(SEG7 ,4)
+		__UCHARBIT_COM0123(SEG8 ,4)
+		__UCHARBIT_COM0123(SEG9 ,4)
+		__UCHARBIT_COM0123(SEG10,4)
+		__UCHARBIT_COM0123(SEG11,4)
+		__UCHARBIT_COM0123(SEG12,4)
+		__UCHARBIT_COM0123(SEG13,4)
+		__UCHARBIT_COM0123(SEG14,4)
+		__UCHARBIT_COM0123(SEG15,4)
+		__UCHARBIT_COM0123(SEG16,4)
+		__UCHARBIT_NONAME(       4)
+	__STRUCT_TYPE_E(COM0123)
+#elif defined(__CPU_MB89950_SERIES)
+	__WORD_MEM_A(10)
+	__BYTE_MEM_A(21)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM01( SEG0 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG1 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG2 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG3 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG4 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG5 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG6 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG7 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG8 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG9 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG10,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG11,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG12,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG13,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG14,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG15,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG16,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG17,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG18,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG19,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG20,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG21,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG22,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG23,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG24,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG25,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG26,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG27,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG28,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG29,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG30,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG31,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG32,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG33,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG34,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG35,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG36,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG37,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG38,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG39,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG40,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG41,2)
+		__UCHARBIT_NONAME(      2)
+	__STRUCT_TYPE_E(COM01)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM012(SEG0 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG1 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG2 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG3 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG4 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG5 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG6 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG7 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG8 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG9 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG10,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG11,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG12,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG13,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG14,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG15,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG16,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG17,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG18,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG19,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG20,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG21,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG22,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG23,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG24,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG25,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG26,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG27,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG28,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG29,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG30,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG31,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG32,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG33,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG34,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG35,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG36,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG37,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG38,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG39,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG40,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG41,3)
+		__UCHARBIT_NONAME(      1)
+	__STRUCT_TYPE_E(COM012)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM0123(SEG0 ,4)
+		__UCHARBIT_COM0123(SEG1 ,4)
+		__UCHARBIT_COM0123(SEG2 ,4)
+		__UCHARBIT_COM0123(SEG3 ,4)
+		__UCHARBIT_COM0123(SEG4 ,4)
+		__UCHARBIT_COM0123(SEG5 ,4)
+		__UCHARBIT_COM0123(SEG6 ,4)
+		__UCHARBIT_COM0123(SEG7 ,4)
+		__UCHARBIT_COM0123(SEG8 ,4)
+		__UCHARBIT_COM0123(SEG9 ,4)
+		__UCHARBIT_COM0123(SEG10,4)
+		__UCHARBIT_COM0123(SEG11,4)
+		__UCHARBIT_COM0123(SEG12,4)
+		__UCHARBIT_COM0123(SEG13,4)
+		__UCHARBIT_COM0123(SEG14,4)
+		__UCHARBIT_COM0123(SEG15,4)
+		__UCHARBIT_COM0123(SEG16,4)
+		__UCHARBIT_COM0123(SEG17,4)
+		__UCHARBIT_COM0123(SEG18,4)
+		__UCHARBIT_COM0123(SEG19,4)
+		__UCHARBIT_COM0123(SEG20,4)
+		__UCHARBIT_COM0123(SEG21,4)
+		__UCHARBIT_COM0123(SEG22,4)
+		__UCHARBIT_COM0123(SEG23,4)
+		__UCHARBIT_COM0123(SEG24,4)
+		__UCHARBIT_COM0123(SEG25,4)
+		__UCHARBIT_COM0123(SEG26,4)
+		__UCHARBIT_COM0123(SEG27,4)
+		__UCHARBIT_COM0123(SEG28,4)
+		__UCHARBIT_COM0123(SEG29,4)
+		__UCHARBIT_COM0123(SEG30,4)
+		__UCHARBIT_COM0123(SEG31,4)
+		__UCHARBIT_COM0123(SEG32,4)
+		__UCHARBIT_COM0123(SEG33,4)
+		__UCHARBIT_COM0123(SEG34,4)
+		__UCHARBIT_COM0123(SEG35,4)
+		__UCHARBIT_COM0123(SEG36,4)
+		__UCHARBIT_COM0123(SEG37,4)
+		__UCHARBIT_COM0123(SEG38,4)
+		__UCHARBIT_COM0123(SEG39,4)
+		__UCHARBIT_COM0123(SEG40,4)
+		__UCHARBIT_COM0123(SEG41,4)
+	__STRUCT_TYPE_E(COM0123)
+#elif defined(__CPU_MB89980_SERIES)
+	__WORD_MEM_A(3)
+	__BYTE_MEM_A(7)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM01( SEG0 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG1 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG2 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG3 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG4 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG5 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG6 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG7 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG8 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG9 ,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG10,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG11,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG12,2)
+		__UCHARBIT_NONAME(      2)
+		__UCHARBIT_COM01( SEG13,2)
+		__UCHARBIT_NONAME(      2)
+	__STRUCT_TYPE_E(COM01)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM012(SEG0 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG1 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG2 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG3 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG4 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG5 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG6 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG7 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG8 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG9 ,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG10,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG11,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG12,3)
+		__UCHARBIT_NONAME(      1)
+		__UCHARBIT_COM012(SEG13,3)
+		__UCHARBIT_NONAME(      1)
+	__STRUCT_TYPE_E(COM012)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT_COM0123(SEG0 ,4)
+		__UCHARBIT_COM0123(SEG1 ,4)
+		__UCHARBIT_COM0123(SEG2 ,4)
+		__UCHARBIT_COM0123(SEG3 ,4)
+		__UCHARBIT_COM0123(SEG4 ,4)
+		__UCHARBIT_COM0123(SEG5 ,4)
+		__UCHARBIT_COM0123(SEG6 ,4)
+		__UCHARBIT_COM0123(SEG7 ,4)
+		__UCHARBIT_COM0123(SEG8 ,4)
+		__UCHARBIT_COM0123(SEG9 ,4)
+		__UCHARBIT_COM0123(SEG10,4)
+		__UCHARBIT_COM0123(SEG11,4)
+		__UCHARBIT_COM0123(SEG12,4)
+		__UCHARBIT_COM0123(SEG13,4)
+	__STRUCT_TYPE_E(COM0123)
+#endif
+#endm
+#endif
+
+
+/*********************************************/
+/* Sample program for I/O variables of UART. */
+/*********************************************/
+/* structure of USMR */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_usmr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	CS  ,3)
+		__UCHARBIT(	CL  ,1)
+		__UCHARBIT(	SBL ,1)
+		__UCHARBIT(	TDP ,1)
+		__UCHARBIT(	PEN ,1)
+		__UCHARBIT(	MD  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of USCR */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_uscr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TIE ,1)
+		__UCHARBIT(	RIE ,1)
+		__UCHARBIT(	SCKE,1)
+		__UCHARBIT(	TXOE,1)
+		__UCHARBIT(	BRGE,1)
+		__UCHARBIT(	TXE ,1)
+		__UCHARBIT(	RXE ,1)
+		__UCHARBIT(	RERC,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of USTR */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_ustr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   3)
+		__UCHARBIT(	TDRE,1)
+		__UCHARBIT(	RDRF,1)
+		__UCHARBIT(	FER ,1)
+		__UCHARBIT(	OVE ,1)
+		__UCHARBIT(	PER ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SMC/SMC1 */
+#if defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89950_SERIES)
+#macro io_smc1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SOE ,1)
+		__UCHARBIT(	SCKE,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	SMDE,1)
+		__UCHARBIT(	MC  ,2)
+		__UCHARBIT(	SBL ,1)
+		__UCHARBIT(	PEN ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SMC2 */
+#if defined(__CPU_MB89950_SERIES)
+#macro io_smc2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PDS ,2)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	RSEL,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	PSEN,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SRC */
+#if defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89950_SERIES)
+#macro io_src symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	RC  ,3)
+		__UCHARBIT(	CS  ,2)
+		__UCHARBIT(	CR  ,1)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SSD */
+#if defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89950_SERIES)
+#macro io_ssd symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	RD8_RP,1)
+		__UCHARBIT(	TD8_TP,1)
+		__UCHARBIT_NONAME(     1)
+		__UCHARBIT(	RIE   ,1)
+		__UCHARBIT(	TIE   ,1)
+		__UCHARBIT(	TDRE  ,1)
+		__UCHARBIT(	ORFE  ,1)
+		__UCHARBIT(	RDRF  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of UPC */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_upc symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PR  ,3)
+		__UCHARBIT(	PREN,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SSEL */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_ssel symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SSEL,1)
+		__UCHARBIT_NONAME(   7)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*******************************************************/
+/* Sample program for I/O variables of output compare. */
+/*******************************************************/
+/* structure of OPCR */
+#if defined(__CPU_MB89920_SERIES)
+#macro io_opcr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	RTO0,1)
+		__UCHARBIT(	OUT0,1)
+		__UCHARBIT(	CIE0,1)
+		__UCHARBIT(	CIR0,1)
+		__UCHARBIT(	RTO1,1)
+		__UCHARBIT(	OUT1,1)
+		__UCHARBIT(	CIE1,1)
+		__UCHARBIT(	CIR1,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/************************************************************/
+/* Sample program for I/O variables of clock control block. */
+/************************************************************/
+/* structure of SYCC */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89930_SERIES) || \
+    defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES)
+#macro io_sycc symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89930_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	CS  ,2)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	WT  ,2)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	SCM ,1)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	CS  ,2)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	WT  ,2)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	CS  ,2)
+		__UCHARBIT(	SCS ,1)
+		__UCHARBIT(	WT  ,2)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	SCM ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+
+/*************************************************************/
+/* Sample program for I/O variables of low power controller. */
+/*************************************************************/
+/* structure of STBC */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_stbc symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89930_SERIES) || \
+    defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89950_SERIES) || \
+    defined(__CPU_MB89990_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   4)
+		__UCHARBIT(	RST ,1)
+		__UCHARBIT(	SPL ,1)
+		__UCHARBIT(	SLP ,1)
+		__UCHARBIT(	STP ,1)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   3)
+		__UCHARBIT(	TMD ,1)
+		__UCHARBIT(	RST ,1)
+		__UCHARBIT(	SPL ,1)
+		__UCHARBIT(	SLP ,1)
+		__UCHARBIT(	STP ,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+
+/***************************************************************/
+/* Sample program for I/O variables of steper motor controler. */
+/***************************************************************/
+/* structure of SEL1 */
+#if defined(__CPU_MB89940_SERIES)
+#macro io_sel1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	M   ,3)
+		__UCHARBIT(	P   ,3)
+		__UCHARBIT_NONAME(   2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of SEL2 */
+#if defined(__CPU_MB89940_SERIES)
+#macro io_sel2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	M   ,3)
+		__UCHARBIT(	P   ,3)
+		__UCHARBIT(	BS  ,1)
+		__UCHARBIT_NONAME(   1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/***********************************************************/
+/* Sample program for control register of time-base timer. */
+/***********************************************************/
+/* structure of TBTC */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_tbtc symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89950_SERIES) || \
+    defined(__CPU_MB89990_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TBC ,2)
+		__UCHARBIT(	TBR ,1)
+		__UCHARBIT(	TBOF,1)
+		__UCHARBIT(	TBIE,1)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	TBR ,1)
+		__UCHARBIT(	TBC ,2)
+		__UCHARBIT_NONAME(   3)
+		__UCHARBIT(	TBIE,1)
+		__UCHARBIT(	TBOF,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+
+/****************************************************************/
+/* Sample program for I/O variables of pulse-width count timer. */
+/****************************************************************/
+/* structure of PCR1 */
+#if defined(__CPU_MB89950_SERIES)
+#macro io_pcr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	BF  ,1)
+		__UCHARBIT(	IR  ,1)
+		__UCHARBIT(	UF  ,1)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	IE  ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EN  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PCR2 */
+#if defined(__CPU_MB89950_SERIES)
+#macro io_pcr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	W   ,2)
+		__UCHARBIT(	C   ,2)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	TO  ,1)
+		__UCHARBIT(	RM  ,1)
+		__UCHARBIT(	FC  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of NCCR */
+#if defined(__CPU_MB89950_SERIES)
+#macro io_nccr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	NCS ,2)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/****************************************************************/
+/* Sample program for buzzer register of buzzer output circuit. */
+/****************************************************************/
+/* structure of BZCR */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89980_SERIES)
+#macro io_bzcr symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89980_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	BZ  ,3)
+		__UCHARBIT_NONAME(   5)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	BZ  ,3)
+		__UCHARBIT(	PSEL,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+
+/*************************************************************/
+/* Sample program for I/O variables of reset flag registers. */
+/*************************************************************/
+/* structure of RSFR */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_rsfr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   4)
+		__UCHARBIT(	SFTR,1)
+		__UCHARBIT(	WDOG,1)
+		__UCHARBIT(	ERST,1)
+		__UCHARBIT(	PONR,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*******************************************************************/
+/* Sample program for I/O variables of pull-up resistor registers. */
+/*******************************************************************/
+/* structure of PUL0 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_pul0 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PUL00 ,1)
+		__UCHARBIT(	PUL01 ,1)
+		__UCHARBIT(	PUL02 ,1)
+		__UCHARBIT(	PUL03 ,1)
+		__UCHARBIT(	PUL04 ,1)
+		__UCHARBIT(	PUL05 ,1)
+		__UCHARBIT(	PUL06 ,1)
+		__UCHARBIT(	PUL07 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PUL3 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_pul3 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PUL30 ,1)
+		__UCHARBIT(	PUL31 ,1)
+		__UCHARBIT(	PUL32 ,1)
+		__UCHARBIT(	PUL33 ,1)
+		__UCHARBIT(	PUL34 ,1)
+		__UCHARBIT(	PUL35 ,1)
+		__UCHARBIT(	PUL36 ,1)
+		__UCHARBIT(	PUL37 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PUL5 */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_pul5 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PUL50 ,1)
+		__UCHARBIT_NONAME(     7)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR1 */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_purr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P00 ,1)
+		__UCHARBIT(	P01 ,1)
+		__UCHARBIT(	P02 ,1)
+		__UCHARBIT(	P03 ,1)
+		__UCHARBIT(	P04 ,1)
+		__UCHARBIT(	P05 ,1)
+		__UCHARBIT(	P06 ,1)
+		__UCHARBIT(	P07 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR2 */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_purr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P10 ,1)
+		__UCHARBIT(	P11 ,1)
+		__UCHARBIT(	P12 ,1)
+		__UCHARBIT(	P13 ,1)
+		__UCHARBIT(	P14 ,1)
+		__UCHARBIT(	P15 ,1)
+		__UCHARBIT(	P16 ,1)
+		__UCHARBIT(	P17 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR3 */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_purr3 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P30 ,1)
+		__UCHARBIT(	P31 ,1)
+		__UCHARBIT(	P32 ,1)
+		__UCHARBIT(	P33 ,1)
+		__UCHARBIT(	P34 ,1)
+		__UCHARBIT_NONAME(   3)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR4 */
+#if defined(__CPU_MB89960_SERIES)
+#macro io_purr4 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	P40 ,1)
+		__UCHARBIT(	P41 ,1)
+		__UCHARBIT(	P42 ,1)
+		__UCHARBIT(	P43 ,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR0 */
+#if defined(__CPU_MB89980_SERIES)
+#macro io_purr0 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PUR00 ,1)
+		__UCHARBIT(	PUR01 ,1)
+		__UCHARBIT(	PUR02 ,1)
+		__UCHARBIT(	PUR03 ,1)
+		__UCHARBIT(	PUR04 ,1)
+		__UCHARBIT(	PUR05 ,1)
+		__UCHARBIT(	PUR06 ,1)
+		__UCHARBIT(	PUR07 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR1 */
+#if defined(__CPU_MB89980_SERIES)
+#macro io_purr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PUR10 ,1)
+		__UCHARBIT(	PUR11 ,1)
+		__UCHARBIT(	PUR12 ,1)
+		__UCHARBIT(	PUR13 ,1)
+		__UCHARBIT(	PUR14 ,1)
+		__UCHARBIT(	PUR15 ,1)
+		__UCHARBIT(	PUR16 ,1)
+		__UCHARBIT(	PUR17 ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of PURR5 */
+#if defined(__CPU_MB89980_SERIES)
+#macro io_purr5 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	PUR50 ,1)
+		__UCHARBIT(	PUR51 ,1)
+		__UCHARBIT(	PUR52 ,1)
+		__UCHARBIT(	PUR53 ,1)
+		__UCHARBIT_NONAME(     4)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*************************************************************/
+/* Sample program for control registers of remote controler. */
+/*************************************************************/
+/* structure of RCR1 */
+#if defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_rcr1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	HSC ,6)
+		__UCHARBIT(	RCK ,2)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of RCR2 */
+#if defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_rcr2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	SCL ,6)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	RCEN,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*******************************************************/
+/* Sample program for I/O variables of Wild registers. */
+/*******************************************************/
+/* structure of WILDR */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_wildreg symbol
+		__UCHAR(	WRARH)
+		__UCHAR(	WRARL)
+		__UCHAR(	WRDR )
+#endm
+#endif
+
+/* structure of WREN  */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_wren  symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	EN00,1)
+		__UCHARBIT(	EN01,1)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of WROR  */
+#if defined(__CPU_MB89930_SERIES)
+#macro io_wror  symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	DDR0,1)
+		__UCHARBIT(	DDR1,1)
+		__UCHARBIT_NONAME(   6)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/***********************************************/
+/* Sample program for I/O variables of VMCNTR. */
+/***********************************************/
+/* structure of VMCNTR */
+#if defined(__CPU_MB89940_SERIES)
+#macro io_vmcntr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	INT ,1)
+		__UCHARBIT(	MS  ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	TST ,1)
+		__UCHARBIT_NONAME(   2)
+		__UCHARBIT(	PD  ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/**********************************************************************/
+/* Sample program for control registers of external interrupt1(eddge) */
+/**********************************************************************/
+/* structure of EIC,EIC1 */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89940_SERIES) || \
+    defined(__CPU_MB89950_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89990_SERIES)
+#macro io_eic1 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	EIE0,1)
+		__UCHARBIT(	SL0 ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EIR0,1)
+		__UCHARBIT(	EIE1,1)
+		__UCHARBIT(	SL1 ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EIR1,1)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	EIE0,1)
+		__UCHARBIT(	SL0 ,2)
+		__UCHARBIT(	EIR0,1)
+		__UCHARBIT(	EIE1,1)
+		__UCHARBIT(	SL1 ,2)
+		__UCHARBIT(	EIR1,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of EIC2 */
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89930_SERIES) || \
+    defined(__CPU_MB89940_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89990_SERIES)
+#macro io_eic2 symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89920_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	EIE2,1)
+		__UCHARBIT(	SL2 ,2)
+		__UCHARBIT(	EIR2,1)
+		__UCHARBIT(	EIE3,1)
+		__UCHARBIT(	SL3 ,2)
+		__UCHARBIT(	EIR3,1)
+	__STRUCT_TYPE_E(bit)
+#elif defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT(	EIE2,1)
+		__UCHARBIT(	SL2 ,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	EIR2,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT(	EIE2,1)
+		__UCHARBIT(	SL2 ,2)
+		__UCHARBIT(	EIR2,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif
+
+/* structure of EIE1 */
+#if defined(__CPU_MB89980_SERIES)
+#macro io_eie1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_UNION
+		__UCHARBIT(	IE10,1)
+		__UCHARBIT(	IE11,1)
+		__UCHARBIT(	IE12,1)
+		__UCHARBIT(	IE13,1)
+		__UCHARBIT(	SIV0,1)
+		__UCHARBIT(	SIV1,1)
+		__UCHARBIT(	SIV2,1)
+		__UCHARBIT(	SIV3,1)
+	__STRUCT_TYPE_E(bit)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT(	IE1 ,4)
+		__UCHARBIT(	SIV ,4)
+	__STRUCT_TYPE_E(bitc)
+#endm
+#endif
+
+/* structure of EIF1 */
+#if defined(__CPU_MB89980_SERIES)
+#macro io_eif1 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_UNION
+		__UCHARBIT(	IF10,1)
+		__UCHARBIT(	IF11,1)
+		__UCHARBIT(	IF12,1)
+		__UCHARBIT(	IF13,1)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bit)
+	__STRUCT_TYPE_UNION
+		__UCHARBIT(	IF1 ,4)
+		__UCHARBIT_NONAME(   4)
+	__STRUCT_TYPE_E(bitc)
+#endm
+#endif
+
+
+/**********************************************************************/
+/* Sample program for control registers of external interrupt2(level) */
+/**********************************************************************/
+/* structure of EIE2 */
+#if defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_eie2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	IE20,1)
+		__UCHARBIT(	IE21,1)
+		__UCHARBIT(	IE22,1)
+		__UCHARBIT(	IE23,1)
+		__UCHARBIT(	IE24,1)
+		__UCHARBIT(	IE25,1)
+		__UCHARBIT(	IE26,1)
+		__UCHARBIT(	IE27,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+/* structure of EIF2 */
+#if defined(__CPU_MB89930_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES) || defined(__CPU_MB89990_SERIES)
+#macro io_eif2 symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	IF20,1)
+		__UCHARBIT_NONAME(   7)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/*******************************************************/
+/* Sample program for I/O variable of watch prescaler. */
+/*******************************************************/
+/* structure of WPCR */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89960_SERIES) || \
+    defined(__CPU_MB89980_SERIES)
+#macro io_wpcr symbol
+	__BYTE_MEM
+	__STRUCT_TYPE_B
+		__UCHARBIT(	WCLR,1)
+		__UCHARBIT(	WS  ,2)
+		__UCHARBIT_NONAME(   3)
+		__UCHARBIT(	WIE ,1)
+		__UCHARBIT(	WIF ,1)
+	__STRUCT_TYPE_E(bit)
+#endm
+#endif
+
+
+/********************************************/
+/* Sample program for I/O variable of LVRC. */
+/********************************************/
+/* structure of LVRC */
+#if defined(__CPU_MB89910_SERIES) || defined(__CPU_MB89920_SERIES) || \
+    defined(__CPU_MB89940_SERIES)
+#macro io_lvrc symbol
+	__BYTE_MEM
+#if defined(__CPU_MB89920_SERIES) || defined(__CPU_MB89940_SERIES)
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	LVRE,1)
+		__UCHARBIT(	LVRF,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	SEL ,2)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	PWDN,1)
+	__STRUCT_TYPE_E(bit)
+#else
+	__STRUCT_TYPE_B
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	LVRE,1)
+		__UCHARBIT(	LVRF,1)
+		__UCHARBIT_NONAME(   1)
+		__UCHARBIT(	SEL ,2)
+		__UCHARBIT(	ITVL,1)
+		__UCHARBIT(	PWDN,1)
+	__STRUCT_TYPE_E(bit)
+#endif
+#endm
+#endif

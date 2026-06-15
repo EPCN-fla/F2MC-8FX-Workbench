@@ -1,0 +1,809 @@
+                                                                +-------------+
+                                                                | IO89470-01E |
+                                                                +-------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                           SAMPLE I/O REGISTER FILES
+                       FOR F2MC-8L FAMILY MB89470 SERIES
+
+                                 USERS MANUAL
+
+                                FUJITSU LIMITED
+
+                                 VERSION 1.0
+
+Preface
+
+  The sample I/O register files for F2MC-8L family declares and defines
+  variables, thereby enabling the I/O registers of the F2MC-8L family to
+  be handled as Assembler Symbols.
+  This manual describes the configuration of the I/O register files,
+  symbol declaration and definition.
+
+
+
+
+Items to note before using I/O register files
+
+  - The I/O register files are intended for specific series of F2MC-8L family.
+    Before applying these programs to any other series of MB89470 series,
+    therefore, be sure to modify the I/O register files.
+
+  - When a program for I/O register operation is coded, the I/O register
+    access sequence and timing must be considered. Please refer to the
+    related hardware manuals.
+
+  - The I/O register files are provided as valuable aids in developing the
+    application programs for MB89470 series. In practice, however, some of
+    these programs may need be modified depending on the target system.
+    Before using any of them, therefore, be sure to verify the actual
+    operation of the program.
+
+  - Fujitsu may assume no liability for errors in the I/O register files and
+    no responsibility for correcting errors immediately even if they are found.
+
+Reference manuals
+
+  I/O register files for MB89470 series (Version 1.0) are made based
+  on the following manuals.
+
+    - MB89470 series HARDWARE MANUAL (CM25-10147-1E)
+
+Contents
+
+CHAPTER 1  CONFIGURATION OF I/O REGISTER FILES
+
+CHAPTER 2  USAGE OF I/O REGISTER FILES
+
+CHAPTER 3  DECLARATION OF I/O REGISTER DECLARATION FILES
+
+CHAPTER 4  SYMBOL NAMES USED IN I/O REGISTER DECLARATION FILES
+           FOR MB89470 SERIES
+
+CHAPTER 1  CONFIGURATION OF I/O REGISTER FILES
+
+ ${FETOOL}             (Directory set in environment variable FETOOL)
+  +-lib
+    +-896
+      +-include
+        +-sample
+          +-MB89470
+            +-_ffmc8l.h   (I/O register declaration file)
+            |
+            +-_mb89470.h  (I/O register declaration file
+            |                                       for MB89470 series)
+            +-_ra89470.h (I/O register structure declaration file
+            |                                       for MB89470 series)
+            |
+            +-_ffmc8l_a.asm (I/O register definition file)
+
+  - I/O register declaration file
+
+    This file declares all the associated I/O register symbols (symbols
+    corresponding to I/O registers).
+    Please include this file when coding a program that handles associated
+    I/O registers.
+
+  - I/O register declaration file for MB89470 series
+
+    This file declares all the structure types corresponding to I/O registers
+    for MB89470 series.
+
+  - I/O register structure declaration file for MB89470 series
+
+    This file declares all the structure types corresponding to I/O registers
+    for MB89470 series.
+
+  - I/O register definition file for each I/O register
+
+    This file defines each the associated I/O register symbol and specifies
+    arrangement address.
+
+CHAPTER 2  USAGE OF I/O REGISTER FILES
+
+  (1) Please assemble the I/O register definition files with the CPU option
+      of using MB number.
+
+        example:  > fasm896s -cpu mb89*** _ffmc8l_a.asm
+
+  (2) When you describe the application program which refers to the I/O
+      registers, please include the I/O register declaration file.
+
+        example:  #include "_ffmc8l.h"
+
+                         .....
+                    SETB  _IO_TCCS_MODE
+                         .....
+
+  (3) Please assemble the application program file with the CPU option of
+      using MB number.
+
+        example:  > fasm896s -cpu mb89*** sample.asm
+
+        Note: When the MB number of the specified CPU option cannot be used
+              for the I/O register file, the following messages are output.
+
+                #error "The I/O register file of the specified CPU option
+                        does not exist"
+
+  (4) Please link the I/O register definition object file and the application
+      program object file.
+
+        example: > flnk896s -cpu mb89*** -o sample.abs _ffmc8l_a.obj sample.obj
+                   -sc IO/IO=0x0000
+
+            Please do this setting to control following Error.
+
+            Note: Amplification of "- sc IO/IO=0x0000"
+
+            example: Now linking...
+                     *** E4366L: Not found locatable address (IO)
+
+            In Workbench, please set the parameter as follows.
+
+            With Linker tag of "Project"-"Setup Project",
+
+            a)  "Set Section" is clicked by "Disposition/Connection" of
+                category.
+            b)  "Specify in Address" is selected ROM/RAM Area Name.
+            c)  "IO" is input to Section Name.
+            d)  "0x0000" is input to Address.
+            e)  "IO" is selected Contents Type.
+            f)  "Set" is clicked.
+            g)  "OK" is clicked.
+
+            Setting is ended clicking "OK" of Setup Project.
+
+CHAPTER 3  DECLARATION OF I/O REGISTER DECLARATION FILES
+
+  Each I/O register declaration file declares the symbols corresponding to
+  I/O register names and bit names as follows:
+
+    - The I/O register symbols that can be accessed in bits are declared in
+      bit type.
+
+    - The I/O register symbols that must be accessed in 1, 2 or 4 bytes
+      are declared in byte type.
+
+    - Basically, each symbol name is declared in the form of the
+      corresponding I/O  register name plus '_IO_'.
+      (However, for access convenience, two or more I/O registers may be
+       declared by one symbol name.)
+
+    - A bit symbol name is declared by the corresponding bit name.
+      (some bits are declared in one symbol name for access convenience)
+
+
+  [Example]  Declaration for I/O register PDR0
+
+    - I/O register structure
+
+          7       6       5       4       3       2       1       0     bit No.
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+      |  P07  |  P06  |  P05  |  P04  |  P03  |  P02  |  P01  |  P00  | PDR0
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+
+    - Contents of declaration (used macro statement)
+
+        #macro io_pdr0 symbol
+                BYTE_MEM
+                STRUCT_TYPE_B
+                        UCHARBIT(       PD00, 1)
+                        UCHARBIT(       PD01, 1)
+                        UCHARBIT(       PD02, 1)
+                        UCHARBIT(       PD03, 1)
+                        UCHARBIT(       PD04, 1)
+                        UCHARBIT(       PD05, 1)
+                        UCHARBIT(       PD06, 1)
+                        UCHARBIT(       PD07, 1)
+                STRUCT_TYPE_E(bit)
+        #endm
+
+        __IO_EXTERN UNION_D(io_pdr0,IO_PDR0)
+
+    - Contents of macro spread
+
+        [At I/O register define]                 [At I/O register declare]
+                      .GLOBAL _IO_PDR0             .GLOBAL _IO_PDR0
+        _IO_PDR0      .res.b  0                    .GLOBAL _IO_PDR0_PD00
+                      .GLOBAL _IO_PDR0_PD00        .GLOBAL _IO_PDR0_PD01
+        _IO_PDR0_PD00 .RES.i  1                    .GLOBAL _IO_PDR0_PD02
+                      .GLOBAL _IO_PDR0_PD01        .GLOBAL _IO_PDR0_PD03
+        _IO_PDR0_PD01 .RES.i  1                    .GLOBAL _IO_PDR0_PD04
+                      .GLOBAL _IO_PDR0_PD02        .GLOBAL _IO_PDR0_PD05
+        _IO_PDR0_PD02 .RES.i  1                    .GLOBAL _IO_PDR0_PD06
+                      .GLOBAL _IO_PDR0_PD03        .GLOBAL _IO_PDR0_PD07
+        _IO_PDR0_PD03 .RES.i  1
+                      .GLOBAL _IO_PDR0_PD04
+        _IO_PDR0_PD04 .RES.i  1
+                      .GLOBAL _IO_PDR0_PD05
+        _IO_PDR0_PD05 .RES.i  1
+                      .GLOBAL _IO_PDR0_PD06
+        _IO_PDR0_PD06 .RES.i  1
+                      .GLOBAL _IO_PDR0_PD07
+        _IO_PDR0_PD07 .RES.i  1
+
+CHAPTER 4  SYMBOL NAMES USED IN I/O REGISTER DECLARATION FILES
+           FOR MB89470 SERIES
+
+<<I/O port>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  Pn7  |  Pn6  |  Pn5  |  Pn4  |  Pn3  |  Pn2  |  Pn1  |  Pn0  | PDRn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  Pn7  |  Pn6  |  Pn5  |  Pn4  |  Pn3  |  Pn2  |  Pn1  |  Pn0  | DDRn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      PDRn(n=0 - 5)     _IO_PDRn              _IO_PDRn_Pnx(x:0 - 7)
+
+      DDRn(n=0 - 1)     _IO_DDRn              none
+
+      DDRn(n=2,5)       _IO_DDRn              _IO_DDRn_Pnx(x:0 - 7)
+    --------------------------------------------------------------------------
+      Note: The following bits do not exist;
+            symbols to be accessed in bits are not declared.
+
+             PDR3:P37
+             PDR4:P43-P47
+             PDR5:P55-P57
+             DDR5:P55-P57
+
+<<System clock control>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  SCM  |   -   |  WT2  |  WT1  |  WT0  |  SCS  |  CS1  |  CS0  | SYCC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      SYCC              _IO_SYCC              _IO_SYCC_SCS
+                                              _IO_SYCC_SCM
+    --------------------------------------------------------------------------
+      Note 1: Data write to SYCC is enabled by assigning a variable or
+              constant to symbol _IO_SYCC with the MOV instruction.
+              (Always write 1 to WT2 bit.)
+      Note 2: The usage of bit access symbols of SYCC are limited to the
+              reading description.
+      Note 3:  To prevent a wrong rewriting, the variable in two or more
+              bits is not defined.
+              Please substitute directly and set the value in the byte or
+              the word variable about rewriting two or more bits.
+
+<<Low-power consumption mode>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  STP  |  SLP  |  SPL  |  RST  |  TMD  |   -   |   -   |   -   | STBC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      STBC              _IO_STBC              _IO_STBC_TMD
+                                              _IO_STBC_RST
+                                              _IO_STBC_SPL
+                                              _IO_STBC_SLP
+                                              _IO_STBC_STP
+    --------------------------------------------------------------------------
+
+<<Watchdog timer>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   CS  |   -   |   -   |   -   |  WTE3 |  WTE2 |  WTE1 |  WTE0 | WDTC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      WDTC              _IO_WDTC              none
+    --------------------------------------------------------------------------
+      Note: Data write to WDTC is enabled by assigning a variable
+           or constant to variable _IO_WDTC with a simple assignment
+           expression.
+
+<<Timebase timer>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  TBOF |  TBIE |   -   |   -   |   -   |  TBC1 |  TBC0 |  TBR  | TBTC
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      TBTC              _IO_TBTC              _IO_TBTC_TBR
+                                              _IO_TBTC_TBIE
+                                              _IO_TBTC_TBOF
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<Clock prescaler>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  WIF  |  WIE  |   -   |   -   |  WS2  |  WS1  |  WS0  |  WCLR | WPCR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      WPCR              _IO_WPCR              _IO_WPCR_WCLR
+                                              _IO_WPCR_WIE
+                                              _IO_WPCR_WIF
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<Reset Flag>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  PONR |  ERST |  WDOG |  SFTR |   -   |   -   |   -   |   -   | RSFR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      RSFR              _IO_RSFR              _IO_RSFR_SFTR
+                                              _IO_RSFR_WDOG
+                                              _IO_RSFR_ERST
+                                              _IO_RSFR_PONR
+    --------------------------------------------------------------------------
+
+<<Buzzer output>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   -   |   -   |   -   |   -   |  BZ2  |  BZ1  |  BZ0  | BUZR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      BUZR              _IO_BUZR              _IO_BUZR_BZ      [BZ0 - BZ2]
+    --------------------------------------------------------------------------
+
+<<8/16-bit timer/counter>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  T1IF |  T1IE | T1OS1 | T1OS0 | T1CS1 | T1CS0 | T1STP | T1STR | T1CR,
+    +-------+-------+-------+-------+-------+-------+-------+-------+ T3CR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  T2IF |  T2IE | T2OS1 | T2OS0 | T2CS1 | T2CS0 | T2STP | T2STR | T2CR,
+    +-------+-------+-------+-------+-------+-------+-------+-------+ T4CR
+
+      15                           8  7                            0  bit No.
+    +-------------------------------+-------------------------------+
+    |              TDR2             |              TDR1             | TmnDR
+    +-------------------------------+-------------------------------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      TnCR              _IO_TnCR              _IO_TnCR_T1STR
+      (n:1,3)                                 _IO_TnCR_T1STP
+                                              _IO_TnCR_T1IE
+                                              _IO_TnCR_T1IF
+
+      TnCR              _IO_TnCR              _IO_TnCR_T2STR
+      (n:2,4)                                 _IO_TnCR_T2STP
+                                              _IO_TnCR_T2IE
+                                              _IO_TnCR_T2IF
+
+      TmnDR             _IO_TmnDR             none
+      (mn:43,21)        _IO_TmnDR_TDR2
+                        _IO_TmnDR_TDR1
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<10-bit A/D converter>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |  ANS2 |  ANS1 |  ANS0 |  ADI  |  ADMV |reserve|   AD  | ADC1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |reserve|reserve|  ADCK |  ADIE |  ADMD |  EXT  |reserve| ADC2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+      15  14  13  12  11  10  9   8   7   6   5   4   3   2   1   0   bit No.
+    +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+
+    | - | - | - | - | - | - | D9| D8| D7| D6| D5| D4| D3| D2| D1| D0| ADDH/
+    +---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+---+ ADDL
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  ADER7|  ADER6|  ADER5|  ADER4|  ADER3|  ADER2|  ADER1|  ADER0| ADER
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      ADC1              _IO_ADC1              _IO_ADC1_AD
+                                              _IO_ADC1_ADMV
+                                              _IO_ADC1_ADI
+
+      ADC2              _IO_ADC2              _IO_ADC2_EXT
+                                              _IO_ADC2_ADMD
+                                              _IO_ADC2_ADIE
+                                              _IO_ADC2_ADCK
+
+      ADDH/ADDL         _IO_ADD               _IO_ADD_DATA10   [D0 - D9]
+
+      ADER              _IO_ADER              _IO_ADER_ADERx(x:0 - 7)
+    --------------------------------------------------------------------------
+      Note 1: When using the MOV instruction to write data to ADC1
+              (symbol _IO_ADC1), be sure to write 0 to bit1.
+      Note 2: When using the MOV instruction to write data to ADC2
+              (symbol _IO_ADC2), be sure to write 1 to bit0, write 0 to
+              ADMD bit, and write 0 to bit5-6.
+      Note 3:  To prevent a wrong rewriting, the variable in two or more
+              bits is not defined.
+              Please substitute directly and set the value in the byte or
+              the word variable about rewriting two or more bits.
+
+<<UART/SIO>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   MD  |  PEN  |  TDP  |  SBL  |   CL  |  CLK2 |  CLK1 |  CLK0 | SMC11,
+    +-------+-------+-------+-------+-------+-------+-------+-------+ SMC21
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  RERC |  RXE  |  TXE  |  BRGE |  TXOE |  SCKE |  RIE  |  TIE  | SMC12,
+    +-------+-------+-------+-------+-------+-------+-------+-------+ SMC22
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  PER  |  OVE  |  FER  |  RDRF |  TDRE |   -   |   -   |   -   | SSDn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +---------------------------------------------------------------+
+    |                                                               | SRCn
+    +---------------------------------------------------------------+
+    +---------------------------------------------------------------+
+    |                                                               | SIDRn/
+    +---------------------------------------------------------------+ SODRn
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      SMC11             _IO_SMC11             _IO_SMC11_CLK  [CLK0 - CLK2]
+                                              _IO_SMC11_CL
+                                              _IO_SMC11_SBL
+                                              _IO_SMC11_TDP
+                                              _IO_SMC11_PEN
+                                              _IO_SMC11_MD
+
+      SMC21             _IO_SMC21             _IO_SMC21_CLK  [CLK0 - CLK2]
+                                              _IO_SMC21_CL
+                                              _IO_SMC21_SBL
+                                              _IO_SMC21_TDP
+                                              _IO_SMC21_PEN
+                                              _IO_SMC21_MD
+
+      SMC12             _IO_SMC12             _IO_SMC12_TIE
+                                              _IO_SMC12_RIE
+                                              _IO_SMC12_SCKE
+                                              _IO_SMC12_TXOE
+                                              _IO_SMC12_BRGE
+                                              _IO_SMC12_TXE
+                                              _IO_SMC12_RXE
+                                              _IO_SMC12_RERC
+
+      SMC22             _IO_SMC22             _IO_SMC22_TIE
+                                              _IO_SMC22_RIE
+                                              _IO_SMC22_SCKE
+                                              _IO_SMC22_TXOE
+                                              _IO_SMC22_BRGE
+                                              _IO_SMC22_TXE
+                                              _IO_SMC22_RXE
+                                              _IO_SMC22_RERC
+
+      SSDn              _IO_SSDn              _IO_SSDn_TDRE
+      (n=1 - 2)                               _IO_SSDn_RDRF
+                                              _IO_SSDn_FER
+                                              _IO_SSDn_OVE
+                                              _IO_SSDn_PER
+
+      SRCn              _IO_SRCn               none
+      (n=1 - 2)
+
+      SIDRn/SODRn       _IO_SIDRn              none
+      (n=1 - 2)
+    --------------------------------------------------------------------------
+
+<<External interrupt circuit>>(level)
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  EIR1 |  SEL3 |  SEL2 |  EIE1 |  EIR0 |  SEL1 |  SEL0 |  EIE0 | EIC1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  EIR3 |  SEL7 |  SEL6 |  EIE3 |  EIR2 |  SEL5 |  SEL4 |  EIE2 | EIC2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   -   |   -   |  IE24 |  IE23 |  IE22 |  IE21 |  IE20 | EIE2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   -   |   -   |   -   |   -   |   -   |   -   |   -   |  IF20 | EIF2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      EIC1              _IO_EIC1              _IO_EIC1_EIEx(x:0 - 1)
+                                              _IO_EIC1_EIRx(x:0 - 1)
+
+      EIC2              _IO_EIC2              _IO_EIC2_EIEx(x:2 - 3)
+                                              _IO_EIC2_EIRx(x:2 - 3)
+
+      EIE2              _IO_EIE2              _IO_EIE2_IE2x(x:0 - 4)
+
+      EIF2              _IO_EIF2              _IO_EIF2_IF20
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<PWC>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   EN  |   -   |   IE  |   -   |   -   |   UF  |   IR  |   BF  | PCR1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |   FC  |   RM  |   TO  |   C1  |   C0  |   W2  |   W1  |   W0  | PCR2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +---------------------------------------------------------------+
+    |                                                               | PLBR
+    +---------------------------------------------------------------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      PCR1              _IO_PCR1              _IO_PCR1_BF
+                                              _IO_PCR1_IR
+                                              _IO_PCR1_UF
+                                              _IO_PCR1_IE
+                                              _IO_PCR1_EN
+
+      PCR2              _IO_PCR2              _IO_PCR2_W       [W0 - W2]
+                                              _IO_PCR2_C       [C0 - C1]
+                                              _IO_PCR2_TO
+                                              _IO_PCR2_RM
+                                              _IO_PCR2_FC
+
+      PLBR              _IO_PLBR              none
+    --------------------------------------------------------------------------
+
+<<8-bit PWM timer>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  P/TX |   -   |   P1  |   P0  |  TPE  |  TIR  |   OE  |  TIE  | CNTR
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +---------------------------------------------------------------+
+    |                                                               | COMR
+    +---------------------------------------------------------------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      CNTR              _IO_CNTR               _IO_CNTR_TIE
+                                               _IO_CNTR_OE
+                                               _IO_CNTR_TIR
+                                               _IO_CNTR_TPE
+                                               _IO_CNTR_PTX
+
+      COMR              _IO_COMR               none
+    --------------------------------------------------------------------------
+      Note:  To prevent a wrong rewriting, the variable in two or more
+            bits is not defined.
+            Please substitute directly and set the value in the byte or
+            the word variable about rewriting two or more bits.
+
+<<Pull-up (option)>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    | PURn7 | PURn6 | PURn5 | PURn4 | PURn3 | PURn2 | PURn1 | PURn0 | PURCn
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      PURCn(n=0-3,5)    _IO_PURCn             _IO_PURCn_PURnx(x:0 - 7)
+    --------------------------------------------------------------------------
+      Note: The following bits do not exist;
+            symbols to be accessed in bits are not declared.
+
+             PURC3:PUR37
+             PURC5:PUR55-PUR57
+
+<<Interrupt controller>>
+
+  - I/O register structure
+
+        7       6       5       4       3       2       1       0     bit No.
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  L31  |  L30  |  L21  |  L20  |  L11  |  L10  |  L01  |  L00  | ILR1
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  L71  |  L70  |  L61  |  L60  |  L51  |  L50  |  L41  |  L40  | ILR2
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  LB1  |  LB0  |  LA1  |  LA0  |  L91  |  L90  |  L81  |  L80  | ILR3
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+    |  LF1  |  LF0  |  LE1  |  LE0  |  LD1  |  LD0  |  LC1  |  LC0  | ILR4
+    +-------+-------+-------+-------+-------+-------+-------+-------+
+
+  - Usable symbol name
+
+    --------------------------------------------------------------------------
+      Register name  At access in 1/2/4bytes  At access in bits
+    --------------------------------------------------------------------------
+      ILR1              _IO_ILR1              none
+
+      ILR2              _IO_ILR2              none
+
+      ILR3              _IO_ILR3              none
+
+      ILR4              _IO_ILR4              none
+    --------------------------------------------------------------------------
+
+<<Revision career>>
+ VERSION 0.1 2003.09.16 - New release
+ VERSION 1.0 2004.02.20 - The number of versions was updated.
+                        - Directory information was updated.
+                        (Changed file) ioreg_a.txt(USERS MANUAL for Asembler)
+
+
+
+
+
+
++-----------------------------------------------------------------------------+
+| - The contents of this document are subject to change without notice.       |
+|   Customers are advised to consult with sales representatives before        |
+|   ordering.                                                                 |
+| - The information, such as descriptions of function and application circuit |
+|   examples, in this document are presented solely for the purpose of        |
+|   reference to show examples of operations and uses of FUJITSU              |
+|   semiconductor device; FUJITSU does not warrant proper operation of the    |
+|   device with respect to use based on such information. When you develop    |
+|   equipment incorporating the device based on such information, you must    |
+|   assume any responsibility arising out of such use of the information.     |
+|   FUJITSU assumes no liability for any damages whatsoever arising out of    |
+|   the use of the information.                                               |
+| - Any information in this document, including descriptions of function and  |
+|   schematic diagrams, shall not be construed as license of the use or       |
+|   exercise of any intellectual property right, such as patent right or      |
+|   copyright, or any other right of FUJITSU or any third party or does       |
+|   FUJITSU warrant non-infringement of any third-party's intellectual        |
+|   property right or other right by using such information. FUJITSU assumes  |
+|   no liability for any infringement of the intellectual property rights or  |
+|   other rights of third parties which would result from the use of          |
+|   information contained herein.                                             |
+| - The products described in this document are designed, developed and       |
+|   manufactured as contemplated for general use, including without           |
+|   limitation, ordinary industrial use, general office use, personal use,    |
+|   and household use, but are not designed, developed and manufactured as    |
+|   contemplated (1) for use accompanying fatal risks or dangers that, unless |
+|   extremely high safety is secured, could have a serious effect to the      |
+|   public, and could lead directly to death, personal injury, severe         |
+|   physical damage or other loss (i.e., nuclear reaction control in nuclear  |
+|   facility, aircraft flight control, air traffic control, mass transport    |
+|   control, medical life support system, missile launch control in weapon    |
+|   system), or (2) for use requiring extremely high reliability              |
+|   (i.e., submersible repeater and artificial satellite). Please note that   |
+|   FUJITSU will not be liable against you and/or any third party for any     |
+|   claims or damages arising in connection with above-mentioned uses of the  |
+|   products.                                                                 |
+| - Any semiconductor devices have an inherent chance of failure. You must    |
+|   protect against injury, damage or loss from such failures by              |
+|   incorporating safety design measures into your facility and equipment     |
+|   such as redundancy, fire protection, and prevention of over-current       |
+|   levels and other abnormal operating conditions.                           |
+| - Exportation/release of any products described in this document may        |
+|   require necessary procedures in accordance with the regulations of the    |
+|   Foreign Exchange and Foreign Trade Control Law of Japan and/or US export  |
+|   control laws.                                                             |
++-----------------------------------------------------------------------------+
+ (C)2008  FUJITSU LIMITED Printed in Japan

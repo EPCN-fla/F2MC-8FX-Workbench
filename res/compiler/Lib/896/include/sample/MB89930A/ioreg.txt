@@ -1,0 +1,1203 @@
+                                                           +----------------+
+                                                           |IO89930A -V01L01|
+                                                           +----------------+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                           SAMPLE I/O REGISTER FILES
+                      FOR F2MC-8L FAMILY MB89930A SERIES
+
+                                 USERS MANUAL
+
+                                FUJITSU LIMITED
+
+                                    V01L01
+
+Preface
+
+  The sample I/O register files for MB89930A series declares and defines
+  variables, thereby enabling the I/O registers
+  of the F2MC-8L family MB89930A series to be handled as C variables.
+  This manual describes the configuration of the I/O register files,
+  variable declaration and definition.
+
+
+
+
+Items to note before using I/O register files
+
+  - The I/O register files are intended for specific series of
+    F2MC-8L family.
+    Before applying these programs to any other series of MB89930A series,
+    therefore, be sure to modify the I/O register files.
+
+  - When a program for I/O register operation is coded, the I/O register
+    access sequence and timing must be considered. Please refer to the
+    related hardware manuals.
+
+  - The I/O register files are provided as valuable aids in developing the
+    application programs for MB89930A series. In practice, however,
+    some of these programs may need be modified depending on the
+    target system. Before using any of them, therefore, be sure to verify
+    the actual operation of the program.
+
+  - Fujitsu may assume no liability for errors in the I/O register files and
+    no responsibility for correcting errors immediately even if they are found.
+
+Reference manuals
+
+  I/O register files for MB89930A series (V01L01) are made based on the
+  following manuals.
+
+    - MB89930A Series HARDWARE MANUAL(CM25-10139-6E-1st)
+
+Contents
+
+CHAPTER 1  CONFIGURATION OF I/O REGISTER FILES
+
+CHAPTER 2  USAGE OF I/O REGISTER FILES
+
+CHAPTER 3  DECLARATION OF I/O REGISTER DECLARATION FILES
+
+CHAPTER 4  VARIABLE AND MEMBER NAMES USED IN I/O REGISTER DECLARATION FILES
+           FOR MB89930A SERIES
+
+CHAPTER 1  CONFIGURATION OF I/O REGISTER FILES
+
+ ${FETOOL}             (Directory set in environment variable FETOOL)
+  +-lib
+    +-896
+      +-include
+        +-sample
+          +-MB89930A
+            +-_ffmc8l.h (I/O register declaration file)
+            |
+            +-mb89930a.h (I/O register declaration file for MB89930A series)
+            |
+            +-_ffmc8l.c (I/O register definition file)
+
+  - I/O register declaration file
+
+    This file declares all the associated I/O register variables (variables
+    corresponding to I/O registers).
+    Please include this file when coding a program that handles associated
+    I/O registers.
+
+  - I/O register declaration file for MB89930A series
+
+    This file declares all the structure types corresponding to I/O registers
+    for MB89930A series.
+
+  - I/O register definition file
+
+    This file defines each the associated I/O register variable and specifies
+    arrangement address.
+
+CHAPTER 2  USAGE OF I/O REGISTER FILES
+
+  (1) Please compile the all I/O register definition files with the CPU option
+      of using MB number.
+
+        example:  > fcc896s  -cpu mb***** -c _ffmc8l.c
+
+  (2) When you describe the application program which refers to the I/O
+      registers, please include the I/O register declaration file.
+
+        example:  #include "_ffmc8l.h"
+
+                  void func(){
+                         .....
+                    IO_TCCS.bit.MODE = 1;
+                         .....
+                  }
+
+  (3) Please compile the application program file with the CPU option of
+      using MB number.
+
+        example:  > fcc896s -cpu mb***** -c sample.c
+
+        Note: When the MB number of the specified CPU option cannot be used
+              for the I/O register file, the following messages are output.
+
+                #error "The I/O register file of the specified CPU option
+                        does not exist"
+
+  (4) Please link the I/O register object file and the application program
+      object file.
+
+        example:  > flnk896s -cpu mb***** -o sample.abs *.obj -sc IO/IO=0x0000
+
+            Please do this setting to control following Warning. 
+
+            Note: Amplification of "- sc IO/IO=0x0000"
+
+            example:Now linking...
+                    *** W1373L: The section is placed outside the I/O area (IO)
+
+            In Workbench, please set the parameter as follows. 
+
+            With Linker tag of [Project]-[Setup Project],
+
+            a)  [Set Section] is clicked by "Disposition/Connection" of
+                category.
+            b)  [Specify in Address] is selected ROM/RAM Area Name.
+            c)  "IO" is input to Section Name.
+            d)  "0x0000" is input to Address.
+            e)  "IO" is selected Contents Type.
+            f)  [Set] is clicked.
+            g)  [OK] is clicked.
+
+            Setting is ended clicking [OK] of [Setup Project].
+
+CHAPTER 3  DECLARATION OF I/O REGISTER DECLARATION FILES
+
+  Each I/O register declaration file declares the variables and the bit field
+  members corresponding to I/O register names and bit names as follows:
+
+    - The I/O register variables that can be accessed in bits, bytes or words
+      are declared in union type (except some declared in structure type).
+
+    - The I/O register variables that must be accessed in 1, 2 or 4 bytes
+      are declared in integer type.
+
+    - Basically, each variable name is declared in the form of the
+      corresponding I/O  register name plus 'IO_'.
+      (However, for access convenience, two or more I/O registers may be
+       declared by one variable name.)
+
+    - A bit field member name is declared by the corresponding bit name.
+      (some bits are declared in one member name for access convenience)
+
+
+  [Example]  Declaration for I/O register PDR0
+
+    - I/O register structure
+
+          7       6       5       4       3       2       1       0    bit No.
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+      |   P07 |   P06 |   P05 |   P04 |   P03 |   P02 |   P01 |   P00 | PDR0
+      +-------+-------+-------+-------+-------+-------+-------+-------+
+
+    - Contents of declaration
+
+      #ifdef __IO_DEFINE
+      #pragma segment IO=IO_PDR0, locate=0x0
+      #endif
+
+      typedef union {
+                __BYTE  byte;
+          struct {
+               __BYTE  P00:1;
+               __BYTE  P01:1;
+               __BYTE  P02:1;
+               __BYTE  P03:1;
+               __BYTE  P04:1;
+               __BYTE  P05:1;
+               __BYTE  P06:1;
+               __BYTE  P07:1;
+          } bit;
+      } PDR0STR;
+
+      __IO_EXTERN PDR0STR    IO_PDR0;
+      #define    _pdr0       IO_PDR0
+      #define    PDR0        IO_PDR0.byte
+      #define    PDR0_P00    IO_PDR0.bit.P00
+      #define    PDR0_P01    IO_PDR0.bit.P01
+      #define    PDR0_P02    IO_PDR0.bit.P02
+      #define    PDR0_P03    IO_PDR0.bit.P03
+      #define    PDR0_P04    IO_PDR0.bit.P04
+      #define    PDR0_P05    IO_PDR0.bit.P05
+      #define    PDR0_P06    IO_PDR0.bit.P06
+      #define    PDR0_P07    IO_PDR0.bit.P07
+
+  < Notes >
+
+      When the value of the variable is substituted for the bit field member of
+      I/O for which the __io type qualifier is specified, it becomes loading ->
+      AND/OR -> store processing. It is not Read Modify Write(RMW) instruction
+      (SETB,CLRB).
+      The mis-deletion and the mis-rewriting not anticipated might be generated
+      when a certain specific bit writes while processing loading -> AND/OR ->
+      store and it changes.
+      Please describe 0/1 judgments of the substituted variable to prevent the
+      above-mentioned, and to write it in the constant value.
+
+    < Example > The variable is substituted for the bit field member of I/O.
+
+        The mis-deletion and the mis-rewriting not anticipated might be
+        generated because it becomes loading -> AND/OR -> store processing if
+        it describes it as follows.
+
+        [C source]
+            IO_PDR0.bit.P00 = RAM_A;
+
+        [ASM output]
+                    MOV     A, _RAM_A
+                    AND     A, #1
+                    MOV     A, _IO_PDR0
+                    AND     A, #254
+                    OR      A
+                    MOV     _IO_PDR0, A
+
+        Please describe 0/1 judgments of the substituted variable to prevent
+        the above-mentioned, and to write it in the constant value.
+        Read Modify Write (RMW) instruction (SETB, CLRB) is output, and the
+        mis-deletion and the mis-rewriting not anticipated can be prevented.
+
+        [Conditions (RMW instruction output)]
+            (1) The type of the bit field that shows I/O is one byte type
+                (char, signed char, unsigned char). AND,
+            (2) The width of the bit field member who shows I/O is one bit.AND,
+            (3) It is I/O register in the I/O area in direct addressing area
+                (0000H-007FH).
+
+        [C source]
+            if (RAM_A) {
+                IO_PDR0.bit.P00 = 1;
+            } else {
+                IO_PDR0.bit.P00 = 0;
+            }
+
+        [ASM output]
+                    MOV     A, _RAM_A
+                    BEQ16   L_23
+                    SETB    _IO_PDR0:0
+                    JMP     L_24
+            L_23:
+                    CLRB    _IO_PDR0:0
+            L_24:
+                    RET
+
+CHAPTER 4  SYMBOL AND MACRO NAMES USED IN I/O REGISTER DECLARATION FILES
+           FOR MB89930A SERIES
+
+  I/O Register Name : PDR0                    Address : 0x0
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PDR0.byte                PDR0                          
+  Bit             IO_PDR0.bit.P00             PDR0_P00                      
+                  IO_PDR0.bit.P01             PDR0_P01                      
+                  IO_PDR0.bit.P02             PDR0_P02                      
+                  IO_PDR0.bit.P03             PDR0_P03                      
+                  IO_PDR0.bit.P04             PDR0_P04                      
+                  IO_PDR0.bit.P05             PDR0_P05                      
+                  IO_PDR0.bit.P06             PDR0_P06                      
+                  IO_PDR0.bit.P07             PDR0_P07                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : DDR0                    Address : 0x1
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_DDR0                     DDR0                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SYCC                    Address : 0x7
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SYCC.byte                SYCC                          
+  Bit             IO_SYCC.bit.CS              SYCC_CS                       
+                  IO_SYCC.bitc.CS0            SYCC_CS0                      
+                  IO_SYCC.bitc.CS1            SYCC_CS1                      
+                  IO_SYCC.bit.WT              SYCC_WT                       
+                  IO_SYCC.bitc.WT0            SYCC_WT0                      
+                  IO_SYCC.bitc.WT1            SYCC_WT1                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : STBC                    Address : 0x8
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_STBC.byte                STBC                          
+  Bit             IO_STBC.bit.RST             STBC_RST                      
+                  IO_STBC.bit.SPL             STBC_SPL                      
+                  IO_STBC.bit.SLP             STBC_SLP                      
+                  IO_STBC.bit.STP             STBC_STP                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WDTC                    Address : 0x9
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WDTC                     WDTC                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : TBTC                    Address : 0xa
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TBTC.byte                TBTC                          
+  Bit             IO_TBTC.bit.TBR             TBTC_TBR                      
+                  IO_TBTC.bit.TBC             TBTC_TBC                      
+                  IO_TBTC.bitc.TBC0           TBTC_TBC0                     
+                  IO_TBTC.bitc.TBC1           TBTC_TBC1                     
+                  IO_TBTC.bit.TBIE            TBTC_TBIE                     
+                  IO_TBTC.bit.TBOF            TBTC_TBOF                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : PDR3                    Address : 0xc
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PDR3.byte                PDR3                          
+  Bit             IO_PDR3.bit.P30             PDR3_P30                      
+                  IO_PDR3.bit.P31             PDR3_P31                      
+                  IO_PDR3.bit.P32             PDR3_P32                      
+                  IO_PDR3.bit.P33             PDR3_P33                      
+                  IO_PDR3.bit.P34             PDR3_P34                      
+                  IO_PDR3.bit.P35             PDR3_P35                      
+                  IO_PDR3.bit.P36             PDR3_P36                      
+                  IO_PDR3.bit.P37             PDR3_P37                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : DDR3                    Address : 0xd
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_DDR3                     DDR3                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : RSFR                    Address : 0xe
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_RSFR.byte                RSFR                          
+  Bit             IO_RSFR.bit.SFTR            RSFR_SFTR                     
+                  IO_RSFR.bit.WDOG            RSFR_WDOG                     
+                  IO_RSFR.bit.ERST            RSFR_ERST                     
+                  IO_RSFR.bit.PONR            RSFR_PONR                     
+----------------------------------------------------------------------------
+
+  I/O Register Name : PDR4                    Address : 0xf
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PDR4.byte                PDR4                          
+  Bit             IO_PDR4.bit.P40             PDR4_P40                      
+                  IO_PDR4.bit.P41             PDR4_P41                      
+                  IO_PDR4.bit.P42             PDR4_P42                      
+                  IO_PDR4.bit.P43             PDR4_P43                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : DDR4                    Address : 0x10
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_DDR4.byte                DDR4                          
+  Bit             IO_DDR4.bit.P40             DDR4_P40                      
+                  IO_DDR4.bit.P41             DDR4_P41                      
+                  IO_DDR4.bit.P42             DDR4_P42                      
+                  IO_DDR4.bit.P43             DDR4_P43                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : OUT4                    Address : 0x11
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_OUT4.byte                OUT4                          
+  Bit             IO_OUT4.bit.P40             OUT4_P40                      
+                  IO_OUT4.bit.P41             OUT4_P41                      
+                  IO_OUT4.bit.P42             OUT4_P42                      
+                  IO_OUT4.bit.P43             OUT4_P43                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : PDR5                    Address : 0x12
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PDR5.byte                PDR5                          
+  Bit             IO_PDR5.bit.P50             PDR5_P50                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : DDR5                    Address : 0x13
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_DDR5.byte                DDR5                          
+  Bit             IO_DDR5.bit.P50             DDR5_P50                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : RCR21                   Address : 0x14
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_RCR21.byte               RCR21                         
+  Bit             IO_RCR21.bit.HSC            RCR21_HSC                     
+                  IO_RCR21.bitc.HSC0          RCR21_HSC0                    
+                  IO_RCR21.bitc.HSC1          RCR21_HSC1                    
+                  IO_RCR21.bitc.HSC2          RCR21_HSC2                    
+                  IO_RCR21.bitc.HSC3          RCR21_HSC3                    
+                  IO_RCR21.bitc.HSC4          RCR21_HSC4                    
+                  IO_RCR21.bitc.HSC5          RCR21_HSC5                    
+                  IO_RCR21.bit.RCK            RCR21_RCK                     
+                  IO_RCR21.bitc.RCK0          RCR21_RCK0                    
+                  IO_RCR21.bitc.RCK1          RCR21_RCK1                    
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : RCR22                   Address : 0x15
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_RCR22.byte               RCR22                         
+  Bit             IO_RCR22.bit.HSC            RCR22_HSC                     
+                  IO_RCR22.bitc.HSC6          RCR22_HSC6                    
+                  IO_RCR22.bitc.HSC7          RCR22_HSC7                    
+                  IO_RCR22.bitc.HSC8          RCR22_HSC8                    
+                  IO_RCR22.bitc.HSC9          RCR22_HSC9                    
+                  IO_RCR22.bitc.HSC10         RCR22_HSC10                   
+                  IO_RCR22.bitc.HSC11         RCR22_HSC11                   
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : RCR23                   Address : 0x16
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_RCR23.byte               RCR23                         
+  Bit             IO_RCR23.bit.SCL            RCR23_SCL                     
+                  IO_RCR23.bitc.SCL0          RCR23_SCL0                    
+                  IO_RCR23.bitc.SCL1          RCR23_SCL1                    
+                  IO_RCR23.bitc.SCL2          RCR23_SCL2                    
+                  IO_RCR23.bitc.SCL3          RCR23_SCL3                    
+                  IO_RCR23.bitc.SCL4          RCR23_SCL4                    
+                  IO_RCR23.bitc.SCL5          RCR23_SCL5                    
+                  IO_RCR23.bit.RCEN           RCR23_RCEN                    
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : RCR24                   Address : 0x17
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_RCR24.byte               RCR24                         
+  Bit             IO_RCR24.bit.SCL            RCR24_SCL                     
+                  IO_RCR24.bitc.SCL6          RCR24_SCL6                    
+                  IO_RCR24.bitc.SCL7          RCR24_SCL7                    
+                  IO_RCR24.bitc.SCL8          RCR24_SCL8                    
+                  IO_RCR24.bitc.SCL9          RCR24_SCL9                    
+                  IO_RCR24.bitc.SCL10         RCR24_SCL10                   
+                  IO_RCR24.bitc.SCL11         RCR24_SCL11                   
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : BZCR                    Address : 0x18
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_BZCR.byte                BZCR                          
+  Bit             IO_BZCR.bit.BZ              BZCR_BZ                       
+                  IO_BZCR.bitc.BZ0            BZCR_BZ0                      
+                  IO_BZCR.bitc.BZ1            BZCR_BZ1                      
+                  IO_BZCR.bitc.BZ2            BZCR_BZ2                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : TCCR                    Address : 0x19
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TCCR.byte                TCCR                          
+  Bit             IO_TCCR.bit.EDGS            TCCR_EDGS                     
+                  IO_TCCR.bitc.EDGS0          TCCR_EDGS0                    
+                  IO_TCCR.bitc.EDGS1          TCCR_EDGS1                    
+                  IO_TCCR.bit.TCMSK           TCCR_TCMSK                    
+                  IO_TCCR.bit.CCMSK           TCCR_CCMSK                    
+                  IO_TCCR.bit.CPIEN           TCCR_CPIEN                    
+                  IO_TCCR.bit.CFCLR           TCCR_CFCLR                    
+                  IO_TCCR.bit.CPIF            TCCR_CPIF                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : TCR1                    Address : 0x1a
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TCR1.byte                TCR1                          
+  Bit             IO_TCR1.bit.TSTR1           TCR1_TSTR1                    
+                  IO_TCR1.bit.TCS1            TCR1_TCS1                     
+                  IO_TCR1.bitc.TCS10          TCR1_TCS10                    
+                  IO_TCR1.bitc.TCS11          TCR1_TCS11                    
+                  IO_TCR1.bitc.TCS12          TCR1_TCS12                    
+                  IO_TCR1.bit.T1IEN           TCR1_T1IEN                    
+                  IO_TCR1.bit.TFCR1           TCR1_TFCR1                    
+                  IO_TCR1.bit.TIF1            TCR1_TIF1                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : TCR0                    Address : 0x1b
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TCR0.byte                TCR0                          
+  Bit             IO_TCR0.bit.TSTR0           TCR0_TSTR0                    
+                  IO_TCR0.bit.TCS0            TCR0_TCS0                     
+                  IO_TCR0.bitc.TCS00          TCR0_TCS00                    
+                  IO_TCR0.bitc.TCS01          TCR0_TCS01                    
+                  IO_TCR0.bitc.TCS02          TCR0_TCS02                    
+                  IO_TCR0.bit.CINV            TCR0_CINV                     
+                  IO_TCR0.bit.T0IEN           TCR0_T0IEN                    
+                  IO_TCR0.bit.TFCR0           TCR0_TFCR0                    
+                  IO_TCR0.bit.TIF0            TCR0_TIF0                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : TDR01                   Address : 0x1c-0x1d
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TDR01.word               TDR01                         
+  Byte/Word       IO_TDR01.byte.TDR1          TDR01_TDR1                    
+                  IO_TDR01.byte.TDR0          TDR01_TDR0                    
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : TCP                     Address : 0x1e-0x1f
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TCP.word                 TCP                           
+  Byte/Word       IO_TCP.byte.TCPH            TCP_TCPH                      
+                  IO_TCP.byte.TCPL            TCP_TCPL                      
+----------------------------------------------------------------------------
+
+  I/O Register Name : TCR2                    Address : 0x20
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_TCR2.byte                TCR2                          
+  Bit             IO_TCR2.bit.TSEL            TCR2_TSEL                     
+                  IO_TCR2.bit.PEN             TCR2_PEN                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : CNTR                    Address : 0x22
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_CNTR.byte                CNTR                          
+  Bit             IO_CNTR.bit.TIE             CNTR_TIE                      
+                  IO_CNTR.bit.OE              CNTR_OE                       
+                  IO_CNTR.bit.TIR             CNTR_TIR                      
+                  IO_CNTR.bit.TPE             CNTR_TPE                      
+                  IO_CNTR.bit.P               CNTR_P                        
+                  IO_CNTR.bitc.P0             CNTR_P0                       
+                  IO_CNTR.bitc.P1             CNTR_P1                       
+                  IO_CNTR.bit.P_TX            CNTR_P_TX                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : COMR                    Address : 0x23
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_COMR                     COMR                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : EIC1                    Address : 0x24
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_EIC1.byte                EIC1                          
+  Bit             IO_EIC1.bit.EIE0            EIC1_EIE0                     
+                  IO_EIC1.bit.SL0             EIC1_SL0                      
+                  IO_EIC1.bitc.SL00           EIC1_SL00                     
+                  IO_EIC1.bitc.SL01           EIC1_SL01                     
+                  IO_EIC1.bit.EIR0            EIC1_EIR0                     
+                  IO_EIC1.bit.EIE1            EIC1_EIE1                     
+                  IO_EIC1.bit.SL1             EIC1_SL1                      
+                  IO_EIC1.bitc.SL10           EIC1_SL10                     
+                  IO_EIC1.bitc.SL11           EIC1_SL11                     
+                  IO_EIC1.bit.EIR1            EIC1_EIR1                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : EIC2                    Address : 0x25
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_EIC2.byte                EIC2                          
+  Bit             IO_EIC2.bit.EIE2            EIC2_EIE2                     
+                  IO_EIC2.bit.SL2             EIC2_SL2                      
+                  IO_EIC2.bitc.SL20           EIC2_SL20                     
+                  IO_EIC2.bitc.SL21           EIC2_SL21                     
+                  IO_EIC2.bit.EIR2            EIC2_EIR2                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SMC                     Address : 0x28
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SMC.byte                 SMC                           
+  Bit             IO_SMC.bit.SOE              SMC_SOE                       
+                  IO_SMC.bit.SCKE             SMC_SCKE                      
+                  IO_SMC.bit.SMDE             SMC_SMDE                      
+                  IO_SMC.bit.MC               SMC_MC                        
+                  IO_SMC.bitc.MC0             SMC_MC0                       
+                  IO_SMC.bitc.MC1             SMC_MC1                       
+                  IO_SMC.bit.SBL              SMC_SBL                       
+                  IO_SMC.bit.PEN              SMC_PEN                       
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SRC                     Address : 0x29
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SRC.byte                 SRC                           
+  Bit             IO_SRC.bit.RC               SRC_RC                        
+                  IO_SRC.bitc.RC0             SRC_RC0                       
+                  IO_SRC.bitc.RC1             SRC_RC1                       
+                  IO_SRC.bitc.RC2             SRC_RC2                       
+                  IO_SRC.bit.CS               SRC_CS                        
+                  IO_SRC.bitc.CS0             SRC_CS0                       
+                  IO_SRC.bitc.CS1             SRC_CS1                       
+                  IO_SRC.bit.CR               SRC_CR                        
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SSD                     Address : 0x2a
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SSD.byte                 SSD                           
+  Bit             IO_SSD.bit.RD8_RP           SSD_RD8_RP                    
+                  IO_SSD.bit.TD8_TP           SSD_TD8_TP                    
+                  IO_SSD.bit.RIE              SSD_RIE                       
+                  IO_SSD.bit.TIE              SSD_TIE                       
+                  IO_SSD.bit.TDRE             SSD_TDRE                      
+                  IO_SSD.bit.ORFE             SSD_ORFE                      
+                  IO_SSD.bit.RDRF             SSD_RDRF                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SIDR                    Address : 0x2b
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SIDR                     SIDR                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : UPC                     Address : 0x2c
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_UPC.byte                 UPC                           
+  Bit             IO_UPC.bit.PR               UPC_PR                        
+                  IO_UPC.bitc.PR0             UPC_PR0                       
+                  IO_UPC.bitc.PR1             UPC_PR1                       
+                  IO_UPC.bitc.PR2             UPC_PR2                       
+                  IO_UPC.bit.PREN             UPC_PREN                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ADC1                    Address : 0x30
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ADC1.byte                ADC1                          
+  Bit             IO_ADC1.bit.AD              ADC1_AD                       
+                  IO_ADC1.bit.ADMV            ADC1_ADMV                     
+                  IO_ADC1.bit.ADI             ADC1_ADI                      
+                  IO_ADC1.bit.ANS             ADC1_ANS                      
+                  IO_ADC1.bitc.ANS0           ADC1_ANS0                     
+                  IO_ADC1.bitc.ANS1           ADC1_ANS1                     
+                  IO_ADC1.bitc.ANS2           ADC1_ANS2                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ADC2                    Address : 0x31
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ADC2.byte                ADC2                          
+  Bit             IO_ADC2.bit.EXT             ADC2_EXT                      
+                  IO_ADC2.bit.ADIE            ADC2_ADIE                     
+                  IO_ADC2.bit.ADCK            ADC2_ADCK                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ADD                     Address : 0x32-0x33
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ADD.word                 ADD                           
+  Bit             IO_ADD.bit.DATA10           ADD_DATA10                    
+                  IO_ADD.bitc.DATA100         ADD_DATA100                   
+                  IO_ADD.bitc.DATA101         ADD_DATA101                   
+                  IO_ADD.bitc.DATA102         ADD_DATA102                   
+                  IO_ADD.bitc.DATA103         ADD_DATA103                   
+                  IO_ADD.bitc.DATA104         ADD_DATA104                   
+                  IO_ADD.bitc.DATA105         ADD_DATA105                   
+                  IO_ADD.bitc.DATA106         ADD_DATA106                   
+                  IO_ADD.bitc.DATA107         ADD_DATA107                   
+                  IO_ADD.bitc.DATA108         ADD_DATA108                   
+                  IO_ADD.bitc.DATA109         ADD_DATA109                   
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ADEN                    Address : 0x34
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ADEN.byte                ADEN                          
+  Bit             IO_ADEN.bit.ADE0            ADEN_ADE0                     
+                  IO_ADEN.bit.ADE1            ADEN_ADE1                     
+                  IO_ADEN.bit.ADE2            ADEN_ADE2                     
+                  IO_ADEN.bit.ADE3            ADEN_ADE3                     
+                  IO_ADEN.bit.ADE4            ADEN_ADE4                     
+                  IO_ADEN.bit.ADE5            ADEN_ADE5                     
+                  IO_ADEN.bit.ADE6            ADEN_ADE6                     
+                  IO_ADEN.bit.ADE7            ADEN_ADE7                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : EIE2                    Address : 0x36
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_EIE2.byte                EIE2_                         
+  Bit             IO_EIE2.bit.IE20            EIE2_IE20                     
+                  IO_EIE2.bit.IE21            EIE2_IE21                     
+                  IO_EIE2.bit.IE22            EIE2_IE22                     
+                  IO_EIE2.bit.IE23            EIE2_IE23                     
+                  IO_EIE2.bit.IE24            EIE2_IE24                     
+                  IO_EIE2.bit.IE25            EIE2_IE25                     
+                  IO_EIE2.bit.IE26            EIE2_IE26                     
+                  IO_EIE2.bit.IE27            EIE2_IE27                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : EIF2                    Address : 0x37
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_EIF2.byte                EIF2                          
+  Bit             IO_EIF2.bit.IF20            EIF2_IF20                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SMR                     Address : 0x39
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SMR.byte                 SMR                           
+  Bit             IO_SMR.bit.SST              SMR_SST                       
+                  IO_SMR.bit.BDS              SMR_BDS                       
+                  IO_SMR.bit.CKS              SMR_CKS                       
+                  IO_SMR.bitc.CKS0            SMR_CKS0                      
+                  IO_SMR.bitc.CKS1            SMR_CKS1                      
+                  IO_SMR.bit.SOE              SMR_SOE                       
+                  IO_SMR.bit.SCKE             SMR_SCKE                      
+                  IO_SMR.bit.SIOE             SMR_SIOE                      
+                  IO_SMR.bit.SIOF             SMR_SIOF                      
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SDR                     Address : 0x3a
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SDR                      SDR                           
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : SSEL                    Address : 0x3b
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_SSEL.byte                SSEL_                         
+  Bit             IO_SSEL.bit.SSEL            SSEL_SSEL                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WRARH0                  Address : 0x40
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WRARH0                   WRARH0                        
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WRARL0                  Address : 0x41
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WRARL0                   WRARL0                        
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WRDR0                   Address : 0x42
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WRDR0                    WRDR0                         
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WRARH1                  Address : 0x43
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WRARH1                   WRARH1                        
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WRARL1                  Address : 0x44
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WRARL1                   WRARL1                        
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WRDR1                   Address : 0x45
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WRDR1                    WRDR1                         
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : WREN                    Address : 0x46
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_WREN.byte                WREN                          
+  Bit             IO_WREN.bit.EN00            WREN_EN00                     
+                  IO_WREN.bit.EN01            WREN_EN01                     
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : PUL0                    Address : 0x70
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PUL0.byte                PUL0                          
+  Bit             IO_PUL0.bit.PUL00           PUL0_PUL00                    
+                  IO_PUL0.bit.PUL01           PUL0_PUL01                    
+                  IO_PUL0.bit.PUL02           PUL0_PUL02                    
+                  IO_PUL0.bit.PUL03           PUL0_PUL03                    
+                  IO_PUL0.bit.PUL04           PUL0_PUL04                    
+                  IO_PUL0.bit.PUL05           PUL0_PUL05                    
+                  IO_PUL0.bit.PUL06           PUL0_PUL06                    
+                  IO_PUL0.bit.PUL07           PUL0_PUL07                    
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : PUL3                    Address : 0x71
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PUL3.byte                PUL3                          
+  Bit             IO_PUL3.bit.PUL30           PUL3_PUL30                    
+                  IO_PUL3.bit.PUL31           PUL3_PUL31                    
+                  IO_PUL3.bit.PUL32           PUL3_PUL32                    
+                  IO_PUL3.bit.PUL33           PUL3_PUL33                    
+                  IO_PUL3.bit.PUL34           PUL3_PUL34                    
+                  IO_PUL3.bit.PUL35           PUL3_PUL35                    
+                  IO_PUL3.bit.PUL36           PUL3_PUL36                    
+                  IO_PUL3.bit.PUL37           PUL3_PUL37                    
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : PUL5                    Address : 0x72
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_PUL5.byte                PUL5                          
+  Bit             IO_PUL5.bit.PUL50           PUL5_PUL50                    
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ILR1                    Address : 0x7b
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ILR1                     ILR1                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ILR2                    Address : 0x7c
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ILR2                     ILR2                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ILR3                    Address : 0x7d
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ILR3                     ILR3                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+  I/O Register Name : ILR4                    Address : 0x7e
+----------------------------------------------------------------------------
+  Access Type     Symbol Name                 Macro Name
+----------------------------------------------------------------------------
+  Byte/Word       IO_ILR4                     ILR4                          
+----------------------------------------------------------------------------
+
+Note : Please substitute the constant in using an easy alternative expression
+       when you write this register. (Please refer to notes in Chapter 3.)
+
+
+
+
+
+  [History]
+   V01L01  30 Nov 2006 - created
+
+
+
++-----------------------------------------------------------------------------+
+| - The contents of this document are subject to change without notice.       |
+|   Customers are advised to consult with sales representatives before        |
+|   ordering.                                                                 |
+| - The information, such as descriptions of function and application circuit |
+|   examples, in this document are presented solely for the purpose of        |
+|   reference to show examples of operations and uses of FUJITSU              |
+|   semiconductor device; FUJITSU does not warrant proper operation of the    |
+|   device with respect to use based on such information. When you develop    |
+|   equipment incorporating the device based on such information, you must    |
+|   assume any responsibility arising out of such use of the information.     |
+|   FUJITSU assumes no liability for any damages whatsoever arising out of    |
+|   the use of the information.                                               |
+| - Any information in this document, including descriptions of function and  |
+|   schematic diagrams, shall not be construed as license of the use or       |
+|   exercise of any intellectual property right, such as patent right or      |
+|   copyright, or any other right of FUJITSU or any third party or does       |
+|   FUJITSU warrant non-infringement of any third-party's intellectual        |
+|   property right or other right by using such information. FUJITSU assumes  |
+|   no liability for any infringement of the intellectual property rights or  |
+|   other rights of third parties which would result from the use of          |
+|   information contained herein.                                             |
+| - The products described in this document are designed, developed and       |
+|   manufactured as contemplated for general use, including without           |
+|   limitation, ordinary industrial use, general office use, personal use,    |
+|   and household use, but are not designed, developed and manufactured as    |
+|   contemplated (1) for use accompanying fatal risks or dangers that, unless |
+|   extremely high safety is secured, could have a serious effect to the      |
+|   public, and could lead directly to death, personal injury, severe         |
+|   physical damage or other loss (i.e., nuclear reaction control in nuclear  |
+|   facility, aircraft flight control, air traffic control, mass transport    |
+|   control, medical life support system, missile launch control in weapon    |
+|   system), or (2) for use requiring extremely high reliability              |
+|   (i.e., submersible repeater and artificial satellite). Please note that   |
+|   FUJITSU will not be liable against you and/or any third party for any     |
+|   claims or damages arising in connection with above-mentioned uses of the  |
+|   products.                                                                 |
+| - Any semiconductor devices have an inherent chance of failure. You must    |
+|   protect against injury, damage or loss from such failures by              |
+|   incorporating safety design measures into your facility and equipment     |
+|   such as redundancy, fire protection, and prevention of over-current       |
+|   levels and other abnormal operating conditions.                           |
+| - Exportation/release of any products described in this document may        |
+|   require necessary procedures in accordance with the regulations of the    |
+|   Foreign Exchange and Foreign Trade Control Law of Japan and/or US export  |
+|   control laws.                                                             |
++-----------------------------------------------------------------------------+
+ (C)2008  FUJITSU LIMITED Printed in Japan

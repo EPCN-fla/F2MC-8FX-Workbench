@@ -1,0 +1,397 @@
+{
+  "name": "f2mc-8fx-workbench",
+  "displayName": "F2MC-8FX Workbench",
+  "description": "F2MC-8L/8FX Family Workbench",
+  "keywords": [
+    "F2MC",
+    "F2MC-8FX"
+  ],
+  "version": "0.0.3",
+  "publisher": "Fla1337",
+  "engines": {
+    "vscode": "^1.123.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+	
+  ],
+  "icon": "./res/icon/app_icon.png",
+  "main": "./dist/extension.js",
+  "repository": {
+    "url": "https://github.com/EPCN-fla/F2MC-8FX-Workbench.git",
+	"type": "git"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "f2mc_workbench.project.importWsp",
+        "title": "%f2mc_workbench.project.importWsp%"
+      },
+      {
+        "command": "f2mc_workbench.project.refresh",
+        "title": "%f2mc_workbench.project.refresh%",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "f2mc_workbench.project.save_all",
+        "title": "%f2mc_workbench.project.save_all%",
+        "icon": {
+          "dark": "./res/icon/save_all.svg",
+          "light": "./res/icon/save_all.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.build",
+        "title": "%f2mc_workbench.project.build%",
+        "icon": {
+          "dark": "./res/icon/build.svg",
+          "light": "./res/icon/build.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.download",
+        "title": "%f2mc_workbench.project.download%",
+        "icon": {
+          "dark": "./res/icon/download.svg",
+          "light": "./res/icon/download.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.clean",
+        "title": "%f2mc_workbench.project.clean%",
+        "icon": {
+          "dark": "./res/icon/clean.svg",
+          "light": "./res/icon/clean.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.addProject",
+        "title": "%f2mc_workbench.project.addProject%",
+        "icon": "$(new-folder)"
+      },
+      {
+        "command": "f2mc_workbench.project.setActive",
+        "title": "%f2mc_workbench.project.setActive%",
+        "icon": "$(check)",
+        "enablement": "viewItem == f2mc.project"
+      },
+      {
+        "command": "f2mc_workbench.project.addFile",
+        "title": "%f2mc_workbench.project.addFile%",
+        "icon": {
+          "dark": "./res/icon/add_file.svg",
+          "light": "./res/icon/add_file.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.addFolder",
+        "title": "%f2mc_workbench.project.addFolder%",
+        "icon": {
+          "dark": "./res/icon/add_folder.svg",
+          "light": "./res/icon/add_folder.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.removeProject",
+        "title": "%f2mc_workbench.project.removeProject%",
+        "icon": "$(remove-close)"
+      },
+      {
+        "command": "f2mc_workbench.project.openFile",
+        "title": "%f2mc_workbench.project.openFile%",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "f2mc_workbench.project.moveUp",
+        "title": "%f2mc_workbench.project.moveUp%",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "f2mc_workbench.project.moveDown",
+        "title": "%f2mc_workbench.project.moveDown%",
+        "icon": "$(arrow-down)"
+      },
+      {
+        "command": "f2mc_workbench.project.removeNode",
+        "title": "%f2mc_workbench.project.removeNode%",
+        "icon": "$(trash)"
+      }
+    ],
+    "configuration": {
+      "title": "F2MC-8FX Helper",
+      "properties": {
+        "f2mc-8fx-workbench.wspPath": {
+          "type": "string",
+          "default": "",
+          "description": "当前工程的 .wsp 文件路径；导入工程时会自动写入工作区设置。"
+        },
+        "f2mc-8fx-workbench.buildWorkingDirectory": {
+          "type": "string",
+          "default": ".",
+          "description": "执行编译、清理、下载命令时使用的工作目录，支持 ${workspaceFolder}、${wspPath}、${projectPath}、${projectDir}、${projectName}、${kind} 变量。"
+        },
+        "f2mc-8fx-workbench.buildCommandTemplate": {
+          "type": "string",
+          "default": "",
+          "description": "编译命令模板。留空时插件会自动尝试 build.bat、make.bat、Makefile 或 .mak 文件。支持 ${workspaceFolder}、${wspPath}、${projectPath}、${projectDir}、${projectName}、${kind} 变量。"
+        }
+      }
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "f2mc_workbench.project.importWsp"
+        },
+        {
+          "command": "f2mc_workbench.project.refresh",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.save_all",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.build"
+        },
+        {
+          "command": "f2mc_workbench.project.download"
+        },
+        {
+          "command": "f2mc_workbench.project.clean"
+        },
+        {
+          "command": "f2mc_workbench.project.addProject",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.setActive",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.removeProject",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.openFile",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.moveUp",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.moveDown",
+          "when": "false"
+        },
+        {
+          "command": "f2mc_workbench.project.removeNode",
+          "when": "false"
+        }
+      ],
+      "editor/title": [
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.refresh",
+          "group": "navigation@1"
+        },
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.save_all",
+          "group": "navigation@2"
+        },
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.build",
+          "group": "navigation@3"
+        },
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.download",
+          "group": "navigation@4"
+        },
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.clean",
+          "group": "navigation@5"
+        }
+      ],
+      "view/title": [
+        {
+          "view": "fh.view",
+          "when": "view == fh.view",
+          "command": "f2mc_workbench.project.refresh",
+          "group": "navigation@1"
+        },
+        {
+          "view": "fh.view",
+          "when": "fla1337.f2mc_workbench.projectActived && view == fh.view",
+          "command": "f2mc_workbench.project.save_all",
+          "group": "navigation@4"
+        }
+      ],
+      "view/item/context": [
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.workspace",
+          "command": "f2mc_workbench.project.addProject",
+          "group": "01_workspace.project@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.build",
+          "group": "inline@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.addFile",
+          "group": "inline@020"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.addFolder",
+          "group": "inline@030"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.setActive",
+          "group": "02_project.state@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.build",
+          "group": "03_project.task@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.clean",
+          "group": "03_project.task@020"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.addFile",
+          "group": "03_project.edit@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.addFolder",
+          "group": "03_project.edit@020"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
+          "command": "f2mc_workbench.project.removeProject",
+          "group": "99_remove.project@090"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.folder",
+          "command": "f2mc_workbench.project.addFile",
+          "group": "inline@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.folder",
+          "command": "f2mc_workbench.project.addFile",
+          "group": "04_folder.edit@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.folder",
+          "command": "f2mc_workbench.project.addFolder",
+          "group": "04_folder.edit@020"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.folder",
+          "command": "f2mc_workbench.project.moveUp",
+          "group": "04_folder.order@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.folder",
+          "command": "f2mc_workbench.project.moveDown",
+          "group": "04_folder.order@020"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.folder",
+          "command": "f2mc_workbench.project.removeNode",
+          "group": "99_remove.folder@090"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.file",
+          "command": "f2mc_workbench.project.openFile",
+          "group": "05_file.open@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.file",
+          "command": "f2mc_workbench.project.moveUp",
+          "group": "05_file.order@010"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.file",
+          "command": "f2mc_workbench.project.moveDown",
+          "group": "05_file.order@020"
+        },
+        {
+          "view": "fh.view",
+          "when": "viewItem == f2mc.file",
+          "command": "f2mc_workbench.project.removeNode",
+          "group": "99_remove.file@090"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fh_view",
+          "title": "F2MC-8FX Helper",
+          "icon": "./res/icon/app_icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "fh_view": [
+        {
+          "id": "fh.view",
+          "name": "资源"
+        },
+        {
+          "id": "fh.settings",
+          "name": "设置"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "yarn run compile && yarn run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.120.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.56.1",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
