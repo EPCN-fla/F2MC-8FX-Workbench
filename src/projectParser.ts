@@ -1,7 +1,9 @@
 import * as path from 'node:path';
 
+import { readIniSection } from './iniUtils';
 import { readTextFile } from './fileSystem';
-import { resolvePath } from './pathUtils';
+import { isSamePath, resolvePath } from './pathUtils';
+import { collectFilesByType, collectFilesByTypeInFolder, collectMemberPaths, orderProjectMembersForTree } from './memberUtils';
 import type { F2mcProjectConfig, F2mcProjectDirectories, F2mcProjectInfo, F2mcProjectMember } from './types';
 
 interface ParsedMemberLine {
@@ -93,10 +95,6 @@ function resolveProjectPaths(wspContent: string, rootPath: string): string[] {
 		.map(match => resolvePath(match[1].trim(), rootPath));
 }
 
-function isSamePath(left: string | undefined, right: string | undefined): boolean {
-	return Boolean(left && right && path.normalize(left).toLowerCase() === path.normalize(right).toLowerCase());
-}
-
 function readOptionFile(content: string, projectRootPath: string): string | undefined {
 	const optionFile = readIniValue(readIniSection(content, 'OPTIONFILE'), 'FILE');
 	return optionFile ? resolvePath(optionFile, projectRootPath) : undefined;
@@ -183,61 +181,6 @@ function parseMemberLine(line: string): ParsedMemberLine | undefined {
 		fileType: match[1],
 		value: match[2].trim()
 	};
-}
-
-function orderProjectMembersForTree(members: F2mcProjectMember[]): F2mcProjectMember[] {
-	return [
-		...members.filter(member => member.kind === 'folder'),
-		...members.filter(member => member.kind === 'file')
-	];
-}
-
-function collectFilesByTypeInFolder(members: F2mcProjectMember[], folderName: string, fileType: string): string[] {
-	const folder = members.find(member => member.kind === 'folder' && member.name.toLowerCase() === folderName.toLowerCase());
-	return folder ? collectFilesByType(folder.children, fileType) : [];
-}
-
-function collectFilesByType(members: F2mcProjectMember[], fileType: string): string[] {
-	return collectMemberPaths(members, member => member.kind === 'file' && member.fileType === fileType);
-}
-
-function collectMemberPaths(members: F2mcProjectMember[], accept?: (member: F2mcProjectMember) => boolean): string[] {
-	const files: string[] = [];
-	for (const member of members) {
-		if (member.kind === 'file' && member.path && (!accept || accept(member))) {
-			files.push(member.path);
-		}
-		files.push(...collectMemberPaths(member.children, accept));
-	}
-	return files;
-}
-
-function readIniSection(content: string, sectionName: string): string[] {
-	const lines = content.split(/\r?\n/);
-	const target = `[${sectionName.toLowerCase()}]`;
-	const sectionLines: string[] = [];
-	let inSection = false;
-
-	for (const rawLine of lines) {
-		const line = rawLine.trim();
-		if (!line) {
-			continue;
-		}
-
-		if (/^\[[^\]]+\]$/.test(line)) {
-			if (inSection) {
-				break;
-			}
-			inSection = line.toLowerCase() === target;
-			continue;
-		}
-
-		if (inSection) {
-			sectionLines.push(line);
-		}
-	}
-
-	return sectionLines;
 }
 
 function readIniValue(lines: string[], key: string): string | undefined {

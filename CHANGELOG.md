@@ -6,6 +6,13 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.0.4]
+
+**新增**:
+  - 支持项目构建器选项配置（少部分选项仍在完善）
+
+***
+
 ### [v0.0.3]
 
 **新增**:

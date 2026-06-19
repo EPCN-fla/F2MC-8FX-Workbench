@@ -1,6 +1,8 @@
 import * as path from 'node:path';
 
-import { readTextFile, writeTextFile } from './fileSystem';
+import { ensureFinalNewline, readTextFile, writeTextFile } from './fileSystem';
+import { readIniSection } from './iniUtils';
+import { getMemberFileType } from './memberUtils';
 import type { F2mcProjectConfig, F2mcProjectInfo, F2mcProjectMember } from './types';
 
 export async function saveProjectFiles(config: F2mcProjectConfig): Promise<void> {
@@ -95,34 +97,6 @@ function replaceLoadModuleInConfiguration(content: string, project: F2mcProjectI
 	return didReplace ? replaceIniSection(content, sectionName, nextLines) : content;
 }
 
-function readIniSection(content: string, sectionName: string): string[] {
-	const lines = content.split(/\r?\n/);
-	const target = `[${sectionName.toLowerCase()}]`;
-	const sectionLines: string[] = [];
-	let inSection = false;
-
-	for (const rawLine of lines) {
-		const line = rawLine.trim();
-		if (!line) {
-			continue;
-		}
-
-		if (/^\[[^\]]+\]$/.test(line)) {
-			if (inSection) {
-				break;
-			}
-			inSection = line.toLowerCase() === target;
-			continue;
-		}
-
-		if (inSection) {
-			sectionLines.push(line);
-		}
-	}
-
-	return sectionLines;
-}
-
 function replaceIniSection(content: string, sectionName: string, sectionLines: string[]): string {
 	const lines = content.split(/\r?\n/);
 	const sectionHeader = `[${sectionName}]`;
@@ -159,10 +133,6 @@ function dropLeadingEmptyLines(lines: string[]): string[] {
 	return lines.slice(firstContentIndex);
 }
 
-function ensureFinalNewline(content: string): string {
-	return content.endsWith('\r\n') ? content : `${content}\r\n`;
-}
-
 function createMemberSectionLines(members: F2mcProjectMember[], projectRootPath: string): string[] {
 	const memberLines: string[] = [];
 	let index = 1;
@@ -174,7 +144,7 @@ function createMemberSectionLines(members: F2mcProjectMember[], projectRootPath:
 			index += 1;
 			for (const child of member.children) {
 				if (child.kind === 'file' && child.path) {
-					memberLines.push(`F${index}=0 ${child.fileType ?? getFileType(child.path)} ${toProjectRelativePath(child.path, projectRootPath)}`);
+					memberLines.push(`F${index}=0 ${child.fileType ?? getMemberFileType(child.path)} ${toProjectRelativePath(child.path, projectRootPath)}`);
 					index += 1;
 				}
 			}
@@ -182,7 +152,7 @@ function createMemberSectionLines(members: F2mcProjectMember[], projectRootPath:
 		}
 
 		if (member.path) {
-			memberLines.push(`F${index}=0 ${member.fileType ?? getFileType(member.path)} ${toProjectRelativePath(member.path, projectRootPath)}`);
+			memberLines.push(`F${index}=0 ${member.fileType ?? getMemberFileType(member.path)} ${toProjectRelativePath(member.path, projectRootPath)}`);
 			index += 1;
 		}
 	}
@@ -223,15 +193,4 @@ function toProjectRelativePath(filePath: string, basePath: string): string {
 
 function ensureTrailingBackslash(value: string): string {
 	return value.endsWith('\\') || value.endsWith('/') ? value : `${value}\\`;
-}
-
-function getFileType(filePath: string): string {
-	const extension = path.extname(filePath).toLowerCase();
-	if (extension === '.asm') {
-		return 'a';
-	}
-	if (extension === '.lib') {
-		return 'l';
-	}
-	return 'c';
 }

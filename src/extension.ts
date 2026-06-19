@@ -2,6 +2,7 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
+import { BuilderOptionsWebview } from './builderOptionsWebview';
 import { runProjectTask } from './buildRunner';
 import { applyChipToProjectFiles } from './chipProjectWriter';
 import { findChipByModel, getChipCategories, loadChipCatalog } from './chipCatalog';
@@ -11,7 +12,8 @@ import { parsePrjProject, parseWspProject } from './projectParser';
 import { createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
 import { saveProjectFiles } from './projectWriter';
-import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider } from './settingsTree';
+import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './settingsTree';
+import { toWorkspaceRelativePath } from './pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -76,6 +78,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 				await persistProjectConfig(config);
 				await saveProjectFiles(config);
 			}
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.settings.openBuilderOptions', async () => {
+			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
+			await BuilderOptionsWebview.open(context, config);
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.importWsp', async () => {
 			await importWspProject(outputChannel);
@@ -378,19 +384,6 @@ async function editProjectProperty(config: F2mcProjectConfig, propertyKey: F2mcP
 	return true;
 }
 
-function getProjectPropertyLabel(propertyKey: F2mcProjectPropertyKey): string {
-	switch (propertyKey) {
-		case 'loadModuleName':
-			return '生成文件名称';
-		case 'loadModuleDirectory':
-			return '生成文件目录';
-		case 'objectDirectory':
-			return '编译文件目录';
-		case 'listDirectory':
-			return '列表文件目录';
-	}
-}
-
 function getProjectPropertyValue(config: F2mcProjectConfig, project: F2mcProjectInfo, propertyKey: F2mcProjectPropertyKey): string {
 	switch (propertyKey) {
 		case 'loadModuleName':
@@ -473,15 +466,4 @@ function stripAbsExtension(fileName: string): string {
 	return path.extname(fileName).toLowerCase() === '.abs'
 		? fileName.slice(0, -path.extname(fileName).length)
 		: fileName;
-}
-
-function toWorkspaceRelativePath(value: string | undefined, workspaceRootPath: string): string {
-	if (!value) {
-		return '';
-	}
-
-	const relativePath = path.relative(workspaceRootPath, value);
-	return relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
-		? relativePath.replace(/\\/g, '/')
-		: value;
 }

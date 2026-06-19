@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import type { F2mcChipInfo } from './chipCatalog';
+import { toWorkspaceRelativePath } from './pathUtils';
 import type { F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 export type F2mcSettingsNodeKind = 'section' | 'property' | 'chip' | 'empty';
@@ -57,6 +58,10 @@ const PROJECT_PROPERTY_DEFINITIONS: ProjectPropertyDefinition[] = [
 		value: (project, workspaceRootPath) => toWorkspaceRelativePath(project.directories?.lst, workspaceRootPath)
 	}
 ];
+
+export function getProjectPropertyLabel(propertyKey: F2mcProjectPropertyKey): string {
+	return PROJECT_PROPERTY_DEFINITIONS.find(definition => definition.key === propertyKey)?.label ?? propertyKey;
+}
 
 export class F2mcSettingsNode extends vscode.TreeItem {
 	public readonly kind: F2mcSettingsNodeKind;
@@ -140,7 +145,15 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 				iconName: 'chip.svg',
 				collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
 			}, this.extensionPath),
-			new F2mcSettingsNode({ label: '构建器选项', kind: 'section', iconName: 'builder.svg' }, this.extensionPath)
+			new F2mcSettingsNode({
+				label: '构建器选项',
+				kind: 'section',
+				iconName: 'builder.svg',
+				command: {
+					command: 'f2mc_workbench.settings.openBuilderOptions',
+					title: '打开构建器选项'
+				}
+			}, this.extensionPath)
 		];
 	}
 
@@ -219,19 +232,4 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 	private getActiveProject(): F2mcProjectInfo | undefined {
 		return this.config?.projects.find(project => project.isActive) ?? this.config?.projects[0];
 	}
-}
-
-function toWorkspaceRelativePath(value: string | undefined, workspaceRootPath: string): string {
-	if (!value) {
-		return '';
-	}
-
-	if (!workspaceRootPath) {
-		return value;
-	}
-
-	const relativePath = path.relative(workspaceRootPath, value);
-	return relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath)
-		? relativePath.replace(/\\/g, '/')
-		: value;
 }

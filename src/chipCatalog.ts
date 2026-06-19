@@ -72,5 +72,6 @@ function parseMemoryArea(value: string | undefined): { start: string; end: strin
 }
 
 function normalizeHex(value: string): string {
-	return `0x${value.slice(2).toUpperCase()}`;
+	const hex = value.slice(2).toUpperCase();
+	return `0x${hex.padStart(4, '0')}`;
 }

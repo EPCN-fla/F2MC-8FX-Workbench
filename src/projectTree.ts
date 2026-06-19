@@ -3,7 +3,8 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { resolvePath } from './pathUtils';
+import { collectFilesByType, collectFilesByTypeInFolder, collectMemberPaths, getMemberFileType, orderProjectMembersForTree } from './memberUtils';
+import { isSamePath, resolvePath } from './pathUtils';
 import type { F2mcProjectConfig, F2mcProjectInfo, F2mcProjectMember } from './types';
 
 interface F2mcProjectNodeInit {
@@ -382,17 +383,6 @@ function isValidProjectMemberDropTarget(node: F2mcProjectNode): boolean {
 	return node.kind === 'project' || isDraggableProjectMemberNode(node);
 }
 
-function isSamePath(left: string | undefined, right: string | undefined): boolean {
-	return Boolean(left && right && path.normalize(left).toLowerCase() === path.normalize(right).toLowerCase());
-}
-
-function orderProjectMembersForTree(members: F2mcProjectMember[]): F2mcProjectMember[] {
-	return [
-		...members.filter(member => member.kind === 'folder'),
-		...members.filter(member => member.kind === 'file')
-	];
-}
-
 function createImportNode(): F2mcProjectNode {
 	const node = new F2mcProjectNode({
 		label: '导入工程',
@@ -484,24 +474,6 @@ function syncProjectFileLists(project: F2mcProjectInfo): void {
 	project.libraryFiles = collectFilesByType(project.members, 'l');
 }
 
-function collectFilesByTypeInFolder(members: F2mcProjectMember[], folderName: string, fileType: string): string[] {
-	const folder = members.find(member => member.kind === 'folder' && member.name === folderName);
-	return folder ? collectFilesByType([folder], fileType) : [];
-}
-
-function collectFilesByType(members: F2mcProjectMember[], fileType: string): string[] {
-	return collectMemberPaths(members, member => member.fileType === fileType);
-}
-
-function collectMemberPaths(members: F2mcProjectMember[], accept?: (member: F2mcProjectMember) => boolean): string[] {
-	return members.flatMap(member => {
-		if (member.kind === 'file') {
-			return member.path && (!accept || accept(member)) ? [member.path] : [];
-		}
-		return collectMemberPaths(member.children, accept);
-	});
-}
-
 function getDropTargetChildren(project: F2mcProjectInfo, targetMember: F2mcProjectMember | undefined): F2mcProjectMember[] {
 	if (!targetMember) {
 		return project.members;
@@ -533,17 +505,6 @@ function isDescendantMember(parent: F2mcProjectMember, maybeDescendant: F2mcProj
 	}
 
 	return parent.children.some(child => child === maybeDescendant || isDescendantMember(child, maybeDescendant));
-}
-
-function getMemberFileType(filePath: string): string {
-	const extension = path.extname(filePath).toLowerCase();
-	if (extension === '.asm') {
-		return 'a';
-	}
-	if (extension === '.lib') {
-		return 'l';
-	}
-	return 'c';
 }
 
 function readTpiDependencies(sourcePath: string, objDirectory: string, projectRootPath: string): string[] {

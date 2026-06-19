@@ -1,8 +1,9 @@
+import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { readTextFile, writeTextFile } from './fileSystem';
+import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
 import { quoteShell, resolvePath } from './pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
@@ -32,6 +33,7 @@ interface DatOptions {
 	compiler: string[];
 	assembler: string[];
 	linker: string[];
+	librarian: string[];
 	converter: string[];
 }
 
@@ -45,7 +47,10 @@ const COMPILER_TOOLS = [
 	{ file: 'fcc896s.exe' },
 	{ file: 'FASM896S.EXE' },
 	{ file: 'FLNK896S.EXE' },
-	{ file: 'F2MS.EXE' }
+	{ file: 'F2MS.EXE' },
+	{ file: 'F2IS.EXE' },
+	{ file: 'F2ES.EXE' },
+	{ file: 'F2HS.EXE' }
 ] as const;
 
 let sharedTerminal: vscode.Terminal | undefined;
@@ -130,7 +135,10 @@ function createBuildLayout(project: F2mcProjectInfo, extensionPath: string): Bui
 	const activeCfgBaseName = project.activeConfiguration;
 	const loadModulePath = project.loadModule ?? path.join(project.directories.config, 'ABS', `${project.name}.abs`);
 	const loadModuleBaseName = path.basename(loadModulePath, path.extname(loadModulePath));
-	const convertedModulePath = path.join(path.dirname(loadModulePath), `${loadModuleBaseName}.mhx`);
+	const outputExt = resolveOutputExtensionFromOptPath(
+		path.join(project.directories.opt, `${optionBaseName}.opv`)
+	);
+	const convertedModulePath = path.join(path.dirname(loadModulePath), `${loadModuleBaseName}${outputExt}`);
 	const mapFilePath = path.join(project.directories.lst, `${loadModuleBaseName}.mp1`);
 	const objectFiles = [...project.sourceFiles, ...project.assemblerFiles]
 		.map(file => path.join(project.directories?.obj ?? projectRootPath, `${path.basename(file, path.extname(file))}.obj`));
@@ -157,17 +165,24 @@ async function writeOptionFiles(layout: BuildLayout): Promise<void> {
 	const options = await readDatOptions(layout.project.optionFile);
 	const optDirectory = layout.optDirectory;
 	const optionBaseName = layout.optionBaseName;
+	const outputExt = resolveOutputExtensionFromOpt(layout);
 	await Promise.all([
 		writeTextFile(path.join(optDirectory, `${optionBaseName}.opc`), createCompileOptions(layout, options)),
 		writeTextFile(path.join(optDirectory, `${optionBaseName}.opa`), createAssemblerOptions(layout, options)),
-		writeTextFile(path.join(optDirectory, `${optionBaseName}.opl`), createLinkerOptions(layout, options)),
-		writeTextFile(path.join(optDirectory, `${optionBaseName}.opv`), createConverterOptions(layout, options))
+		writeAnsiTextFile(path.join(optDirectory, `${optionBaseName}.opl`), createLinkerOptions(layout, options)),
+		writeAnsiTextFile(path.join(optDirectory, `${optionBaseName}.opb`), createLibrarianOptions(layout, options)),
+		writeAnsiTextFile(path.join(optDirectory, `${optionBaseName}.opv`), createConverterOptions(layout, options, outputExt))
 	]);
+}
+
+async function writeAnsiTextFile(filePath: string, content: string): Promise<void> {
+	await writeTextFile(filePath, content);
+	convertFileToAnsiEncoding(filePath);
 }
 
 async function readDatOptions(optionFile: string | undefined): Promise<DatOptions> {
 	if (!optionFile) {
-		return { compiler: [], assembler: [], linker: [], converter: [] };
+		return { compiler: [], assembler: [], linker: [], librarian: [], converter: [] };
 	}
 
 	const content = await readTextFile(optionFile);
@@ -175,6 +190,7 @@ async function readDatOptions(optionFile: string | undefined): Promise<DatOption
 		compiler: readDatSection(content, '0'),
 		assembler: readDatSection(content, '1'),
 		linker: readDatSection(content, '2'),
+		librarian: readDatSection(content, '3'),
 		converter: readDatSection(content, '4')
 	};
 }
@@ -254,11 +270,20 @@ function createLinkerOptions(layout: BuildLayout, options: DatOptions): string {
 	]);
 }
 
-function createConverterOptions(layout: BuildLayout, options: DatOptions): string {
+function createLibrarianOptions(layout: BuildLayout, options: DatOptions): string {
+	return normalizeOptionLines([
+		...removeDuplicateOptions(options.librarian, ['-Xdof']),
+		'-cwno',
+		...(layout.project.cpuName ? [`-cpu ${layout.project.cpuName}`] : [])
+	]);
+}
+
+function createConverterOptions(layout: BuildLayout, options: DatOptions, outputExt: string): string {
+	const modulePath = path.join(path.dirname(layout.convertedModulePath), `${path.basename(layout.convertedModulePath, path.extname(layout.convertedModulePath))}${outputExt}`);
 	return normalizeOptionLines([
 		...removeDuplicateOptions(options.converter, ['-Xdof']),
 		'-cwno',
-		`-o ${quoteOptionPath(layout.convertedModulePath)}`,
+		`-o ${quoteOptionPath(modulePath)}`,
 		quoteOptionPath(layout.loadModulePath)
 	]);
 }
@@ -296,9 +321,11 @@ function quotePowerShellLiteral(value: string): string {
 }
 
 function createBuildScript(layout: BuildLayout): string {
+	const converterExe = resolveConverterExe(layout);
 	const lines = [
 		'@echo off',
 		'setlocal enabledelayedexpansion',
+		'chcp 65001 >nul',
 		'',
 		`set "COMPILER_DIR=${layout.compilerDirectory}"`,
 		'set "PATH=%COMPILER_DIR%;%PATH%"',
@@ -329,7 +356,7 @@ function createBuildScript(layout: BuildLayout): string {
 		`echo ${layout.loadModulePath}`,
 		'',
 		'echo Now starting load module converter...',
-		`f2ms.exe -f "%OPT_DIR%\\${layout.optionBaseName}.opv" -Xdof`,
+		`${converterExe} -f "%OPT_DIR%\\${layout.optionBaseName}.opv" -Xdof`,
 		'if errorlevel 1 exit /b 1',
 		`echo ${layout.convertedModulePath}`,
 		'',
@@ -340,6 +367,39 @@ function createBuildScript(layout: BuildLayout): string {
 		'endlocal'
 	];
 	return joinScriptLines(lines);
+}
+
+function resolveConverterExe(layout: BuildLayout): string {
+	const outputExt = resolveOutputExtensionFromOpt(layout);
+	if (outputExt === '.ihx') return 'f2is.exe';
+	if (outputExt === '.ehx') return 'f2es.exe';
+	if (outputExt === '.hex') return 'f2hs.exe';
+	return 'f2ms.exe';
+}
+
+function resolveOutputExtensionFromOpt(layout: BuildLayout): string {
+	const opvPath = path.join(layout.optDirectory, `${layout.optionBaseName}.opv`);
+	return resolveOutputExtensionFromOptPath(opvPath);
+}
+
+function resolveOutputExtensionFromOptPath(opvPath: string): string {
+	try {
+		const content = fs.readFileSync(opvPath, 'utf-8');
+		const lines = content.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+		for (const line of lines) {
+			const trimmed = line.trim().toLowerCase();
+			if (trimmed.startsWith('-o "') && trimmed.endsWith('"')) {
+				const value = trimmed.slice(4, -1);
+				if (value.endsWith('.ihx')) return '.ihx';
+				if (value.endsWith('.ehx')) return '.ehx';
+				if (value.endsWith('.hex')) return '.hex';
+				return '.mhx';
+			}
+		}
+	} catch {
+		// fall through to default
+	}
+	return '.mhx';
 }
 
 function createCompileCommand(layout: BuildLayout, sourceFile: string): string[] {
@@ -364,11 +424,12 @@ function createCleanScript(layout: BuildLayout): string {
 	const lines = [
 		'@echo off',
 		'setlocal',
+		'chcp 65001 >nul',
 		'',
 		'echo Now cleaning...',
-		...createCleanDirectoryCommands(layout.objDirectory, ['*.obj', '*.stk']),
+		...createCleanDirectoryCommands(layout.objDirectory, ['*.obj', '*.stk', '*.tpi']),
 		...createCleanDirectoryCommands(layout.lstDirectory, ['*.lst', '*.map']),
-		...createCleanDirectoryCommands(path.dirname(layout.loadModulePath), ['*.abs', '*.mhx', '*.hex', '*.s19']),
+		...createCleanDirectoryCommands(path.dirname(layout.loadModulePath), ['*.abs', '*.mhx', '*.ihx', '*.ehx', '*.hex', '*.s19']),
 		'echo Clean complete.',
 		'endlocal'
 	];
