@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 
-import { readTextFile, writeTextFile } from './fileSystem';
+import { ensureFinalNewline, readTextFile, writeTextFile } from './fileSystem';
 import type { F2mcChipInfo } from './chipCatalog';
 import type { F2mcProjectInfo } from './types';
 
@@ -131,8 +131,4 @@ function findLinkerInsertIndex(lines: string[]): number {
 	const alIndex = lines.findIndex(line => /^-AL\s+/i.test(line.trim()));
 	const firstContentIndex = lines.findIndex(line => line.trim().length > 0);
 	return alIndex >= 0 ? alIndex + 1 : firstContentIndex >= 0 ? firstContentIndex + 1 : 0;
-}
-
-function ensureFinalNewline(content: string): string {
-	return content.endsWith('\r\n') ? content : `${content}\r\n`;
 }
