@@ -8,6 +8,7 @@ import { applyChipToProjectFiles } from './chipProjectWriter';
 import { findChipByModel, getChipCategories, loadChipCatalog } from './chipCatalog';
 import type { F2mcChipInfo } from './chipCatalog';
 import { PROJECT_CONTEXT } from './constants';
+import { registerCppConfigurationProvider } from './cppConfigurationProvider';
 import { parsePrjProject, parseWspProject } from './projectParser';
 import { createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
@@ -154,6 +155,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	);
 
 	await loadCurrentProject();
+	await registerCppConfigurationProvider(context, () => treeProvider.getProjectConfig());
 }
 
 export function deactivate(): void {

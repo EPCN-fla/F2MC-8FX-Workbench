@@ -6,16 +6,19 @@
     "F2MC",
     "F2MC-8FX"
   ],
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "Fla1337",
   "engines": {
     "vscode": "^1.123.0"
   },
   "categories": [
-    "Other"
+	"Programming Languages", "Other"
+  ],
+  "extensionDependencies": [
+    "ms-vscode.cpptools"
   ],
   "activationEvents": [
-	
+    "onStartupFinished"
   ],
   "icon": "./res/icon/app_icon.png",
   "main": "./dist/extension.js",

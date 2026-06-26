@@ -6,6 +6,20 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.0.5]
+
+**新增**:
+  - 内置 C/C++ IntelliSense Provider，支持工作区分析、代码补全
+
+**修复**:
+  - 工程树源文件包含的库文件路径存在中文时，无法访问到该文件
+
+**优化**:
+  - 编译和清理脚本在执行完毕后自动删除，不再占用磁盘空间
+  - 插件在vscode启动完成后会自动启用
+
+***
+
 ### [v0.0.4]
 
 **新增**:
