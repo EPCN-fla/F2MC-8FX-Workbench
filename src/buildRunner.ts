@@ -73,7 +73,7 @@ export async function runProjectTask(
 	outputChannel.appendLine(`[${kind}] command: ${command.commandLine}`);
 	terminal.show(true);
 	terminal.sendText(`Set-Location -LiteralPath ${quotePowerShellLiteral(command.cwd)}`, true);
-	terminal.sendText(command.commandLine, true);
+	terminal.sendText(`Clear-Host; ${command.commandLine}`, true);
 }
 
 async function resolveBuildCommand(config: F2mcProjectConfig, kind: BuildKind, extensionPath: string): Promise<CommandSpec | undefined> {
@@ -99,7 +99,7 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 	}
 
 	if (kind === 'download') {
-		void vscode.window.showWarningMessage('下载功能尚未配置，请使用 f2mc-8fx-workbench.buildCommandTemplate 指定下载命令。');
+		void vscode.window.showWarningMessage('下载功能暂不支持');
 		return undefined;
 	}
 
@@ -302,7 +302,9 @@ function quoteOptionPath(value: string): string {
 }
 
 function createScriptExecutionCommand(scriptPath: string): string {
-	return `& ${quoteShell(scriptPath)}`;
+	const quotedPath = quoteShell(scriptPath);
+	const psPath = scriptPath.replace(/'/g, "''");
+	return `& ${quotedPath}; Remove-Item -LiteralPath '${psPath}' -Force`;
 }
 
 function getSharedTerminal(cwd: string): vscode.Terminal {

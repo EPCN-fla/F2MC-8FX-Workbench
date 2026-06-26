@@ -1,3 +1,4 @@
+import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -514,7 +515,7 @@ function readTpiDependencies(sourcePath: string, objDirectory: string, projectRo
 	}
 
 	const seen = new Set<string>();
-	const content = fs.readFileSync(tpiPath, 'utf8');
+	const content = readAnsiTextFileSync(tpiPath);
 	return content
 		.split(/\r?\n/)
 		.map(line => line.trim())
@@ -528,6 +529,20 @@ function readTpiDependencies(sourcePath: string, objDirectory: string, projectRo
 			seen.add(key);
 			return true;
 		});
+}
+
+function readAnsiTextFileSync(filePath: string): string {
+	const buffer = fs.readFileSync(filePath);
+	if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+		return buffer.toString('utf8', 3);
+	}
+	const utf8Result = buffer.toString('utf8');
+	if (!utf8Result.includes('\ufffd')) {
+		return utf8Result;
+	}
+	const psPath = filePath.replace(/'/g, "''");
+	const cmd = `powershell -NoProfile -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $bytes = [System.IO.File]::ReadAllBytes('${psPath}'); $enc = [System.Text.Encoding]::Default; [Console]::Write($enc.GetString($bytes))"`;
+	return childProcess.execSync(cmd, { encoding: 'utf8' });
 }
 
 function normalizePathKey(filePath: string): string {
