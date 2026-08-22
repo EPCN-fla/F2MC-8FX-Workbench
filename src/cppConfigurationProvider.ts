@@ -80,6 +80,9 @@ class F2mcCppConfigurationProvider implements CustomConfigurationProvider {
 			if (e.affectsConfiguration('C_Cpp.default')) {
 				this.refresh();
 			}
+			if (e.affectsConfiguration('f2mc-8fx-workbench.compilerPath')) {
+				void rescanCppIntelliSense();
+			}
 		});
 	}
 

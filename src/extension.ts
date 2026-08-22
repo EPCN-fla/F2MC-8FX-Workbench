@@ -14,6 +14,7 @@ import { createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } fr
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
 import { saveProjectFiles } from './projectWriter';
 import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './settingsTree';
+import { pickAndSetupToolchain } from './toolchainInstaller';
 import { toWorkspaceRelativePath } from './pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
@@ -83,6 +84,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('f2mc_workbench.settings.openBuilderOptions', async () => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
 			await BuilderOptionsWebview.open(context, config);
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.settings.installToolchain', async () => {
+			await pickAndSetupToolchain();
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.importWsp', async () => {
 			await importWspProject(outputChannel);

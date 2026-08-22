@@ -7,10 +7,6 @@ export function resolvePath(value: string, basePath: string): string {
 	return path.normalize(path.resolve(basePath, value));
 }
 
-export function quoteShell(value: string): string {
-	return /\s/.test(value) ? `"${value.replace(/"/g, '\\"')}"` : value;
-}
-
 export function isSamePath(left: string | undefined, right: string | undefined): boolean {
 	return Boolean(left && right && path.normalize(left).toLowerCase() === path.normalize(right).toLowerCase());
 }

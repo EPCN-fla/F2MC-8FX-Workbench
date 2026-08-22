@@ -2,14 +2,15 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { CONFIG_FILE_NAME, EXTENSION_ID } from './constants';
+import { CONFIG_FILE_NAME, EXTENSION_ID, HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from './constants';
 import { readTextFile, writeJsonFile } from './fileSystem';
 import type { F2mcProjectConfig } from './types';
 
 export async function discoverProjectConfig(): Promise<F2mcProjectConfig | undefined> {
 	const folders = vscode.workspace.workspaceFolders ?? [];
 	for (const folder of folders) {
-		const config = await readProjectConfig(path.join(folder.uri.fsPath, '.f2mc-helper', CONFIG_FILE_NAME));
+		const config = await readProjectConfig(path.join(folder.uri.fsPath, HELPER_DIR_NAME, CONFIG_FILE_NAME))
+			?? await readProjectConfig(path.join(folder.uri.fsPath, LEGACY_HELPER_DIR_NAME, CONFIG_FILE_NAME));
 		if (config) {
 			return config;
 		}
@@ -19,8 +20,8 @@ export async function discoverProjectConfig(): Promise<F2mcProjectConfig | undef
 }
 
 export async function persistProjectConfig(config: F2mcProjectConfig): Promise<void> {
-	await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.join(config.rootPath, '.f2mc-helper')));
-	await writeJsonFile(path.join(config.rootPath, '.f2mc-helper', CONFIG_FILE_NAME), config);
+	await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.join(config.rootPath, HELPER_DIR_NAME)));
+	await writeJsonFile(path.join(config.rootPath, HELPER_DIR_NAME, CONFIG_FILE_NAME), config);
 }
 
 export async function createVsCodeWorkspace(config: F2mcProjectConfig): Promise<string> {

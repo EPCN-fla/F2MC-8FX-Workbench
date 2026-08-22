@@ -153,6 +153,15 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 					command: 'f2mc_workbench.settings.openBuilderOptions',
 					title: '打开构建器选项'
 				}
+			}, this.extensionPath),
+			new F2mcSettingsNode({
+				label: '工具链安装',
+				kind: 'section',
+				iconName: 'toolbox.svg',
+				command: {
+					command: 'f2mc_workbench.settings.installToolchain',
+					title: '工具链安装'
+				}
 			}, this.extensionPath)
 		];
 	}

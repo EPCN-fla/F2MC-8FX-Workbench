@@ -16,13 +16,17 @@ export const COMPILER_TOOLS = [
 	'F2HS.EXE'
 ] as const;
 
+export function findCompilerBinDirectory(directory: string): string | undefined {
+	return [directory, path.join(directory, 'Bin')]
+		.find(candidate => COMPILER_TOOLS.some(tool => fs.existsSync(path.join(candidate, tool))));
+}
+
 export function resolveCompilerDirectory(extensionPath: string): string | undefined {
 	const configured = vscode.workspace.getConfiguration('f2mc-8fx-workbench').get<string>('compilerPath')?.trim();
 	if (configured) {
 		const basePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? extensionPath;
 		const configuredPath = resolvePath(configured.replace(/\$\{workspaceFolder\}/g, basePath), basePath);
-		return [configuredPath, path.join(configuredPath, 'Bin')]
-			.find(candidate => COMPILER_TOOLS.some(tool => fs.existsSync(path.join(candidate, tool))));
+		return findCompilerBinDirectory(configuredPath);
 	}
 
 	const bundledDirectory = path.join(extensionPath, 'res', 'compiler', 'Bin');
