@@ -14,7 +14,7 @@
 ### 1.2 编译指令经由 bat 文件间接执行
 
 - `createBuiltInCommand()`（src/buildRunner.ts:115-124）将完整编译流程写入
-  `.f2mc-helper/build.bat`（或 `clean.bat`），再向终端发送
+   `.f2mc-8fx-wb/build.bat`（或 `clean.bat`），再向终端发送
   `& <scriptPath>; Remove-Item ...` 执行后自删除。
 - 终端实际已在用（`getSharedTerminal()` + `sendText`），但只是充当 bat 的启动器：
   - 无法分步观察每条编译命令；
@@ -31,7 +31,7 @@
 | `package.json` `contributes.configuration` | 仅 `wspPath` / `buildWorkingDirectory` / `buildCommandTemplate` | ✅ 已新增 `f2mc-8fx-workbench.compilerPath` |
 | `res/compiler/` | 内置整套编译器（fcc896s / FASM896S / FLNK896S / F2xS 等） | ✅ 已删除，不再随插件打包；工具链改为 `toolchain/*.tar.gz` 供用户自行下载 |
 
-> **进度说明（2026-08-22）**：步骤 1、2、5 已完成（含 `res/compiler` 移除与 tar.gz 打包）；步骤 3、4（去 bat 化 + cmd 终端直跑）与步骤 6（设置页入口）待实施。已完成部分的描述已与实际代码同步。
+> **进度说明（2026-08-22）**：全部步骤已实施完成。步骤 1、2、5 为自定义编译器路径（含 `res/compiler` 移除与 tar.gz 打包）；步骤 3、4 完成去 bat 化与 cmd 终端直跑；步骤 6 完成「工具链安装」入口（含 GitHub 下载解压）。已完成部分的描述已与实际代码同步。
 
 ## 2. 目标设计
 
@@ -83,7 +83,7 @@ terminal.sendText() 以 cmd 语法（&& 串联 / 逐条）执行
 - `createBuildLayout()` 改为接收 `compilerDirectory` 参数，不再内部拼接 `res/compiler/Bin`。
 - bat 内 `COMPILER_TOOLS` 存在性检查保留（双保险），常量改从 toolchain.ts 导入。
 
-### 步骤 3：去除 bat，改为终端直接执行（待实施）
+### 步骤 3：去除 bat，改为终端直接执行 ✅ 已完成
 
 重构 `createBuiltInCommand()` / `createBuildScript()`：
 
@@ -93,20 +93,20 @@ terminal.sendText() 以 cmd 语法（&& 串联 / 逐条）执行
    - clean 的 `del /q` 可用 Node `fs` 直接实现，或翻译成 PowerShell `Remove-Item` 命令序列（终端执行方式下建议保留终端可见，便于用户核对）。
 2. 终端 shell 明确使用 **cmd.exe**（Windows 主目标），不用 PowerShell；如需跨平台/兼容 git-bash，按 shell 类型生成两套命令文本（见步骤 4）。
 3. 执行策略（cmd 语法）：
-   - **单行串联**：用 cmd 的 `&&` 把「编译 → 链接 → 转换」拼成一条命令发送，任一失败即中断（`&&` 语义天然等价于 bat 里的 `if errorlevel 1 exit /b 1`），如：
+   - **分块 `&&` 串联 + 错误标志（最终实现）**：编译/链接/转换命令以 ` && ` 串联，按 6000 字符分块（cmd 交互式单行上限约 8191），逐块 `sendText`；首行 `set "__F2MC_ERR="`，每块包裹为
      ```bat
-     fcc896s.exe -f "..." -Xdof -o "..." "src.c" && fasm896s.exe -f "..." ... && flnk896s.exe -f "..." -Xdof && f2ms.exe -f "..." -Xdof
+     if not defined __F2MC_ERR ( <命令链> || set "__F2MC_ERR=1" )
      ```
-     提示性标题（`echo Now building...` 等）可用 `echo.` 穿插，但 echo 文本必须考虑编码（见步骤 4）。
+     任一块失败后 `__F2MC_ERR` 置位，后续块整体跳过——在纯终端方案下保持与原 bat `if errorlevel 1 exit /b 1` 等价的「失败即停」语义。`&&` 链中 echo 恒成功，不改变中断行为；引号包裹的路径在括号块内安全。
    - **逐条 sendText**：可读性最好，但 VS Code API 无法感知每条命令的退出码，失败时后续命令仍会执行；如需逐条发送则每条命令后自行追加 `|| exit /b 1` 或改用 `&&` 前缀串联。shell integration（`onDidEndTerminalShellExecution`）可作为后续增强。
    - clean：删除命令翻译为 cmd 的 `if exist "<dir>\*.obj" del /q "<dir>\*.obj"` 序列，逐条发送，保持终端可见便于用户核对。
 4. 删除/停用以下不再需要的内容：
-   - `writeTextFile(scriptPath, ...)` 与 `.f2mc-helper` 临时目录；
+   - `writeTextFile(scriptPath, ...)` 与 `.f2mc-8fx-wb` 临时目录；
    - `createScriptExecutionCommand()`（执行后自删脚本的逻辑）；
-   - bat 专属的 `@echo off`、`setlocal` 等（`chcp` 处理下沉到终端初始化，见步骤 4）；
+   - bat 专属的 `@echo off`、`setlocal` 等（`chcp` 有意省略，见步骤 4）；
    - `runProjectTask()` 中 PowerShell 专属的 `Set-Location -LiteralPath`、`Clear-Host` 和 `quotePowerShellLiteral()`，改为 cmd 的 `cd /d "<cwd>"`（或创建终端时直接传 `cwd`，无需再发送 cd）。
 
-### 步骤 4：终端创建（cmd/bash）与编码处理（待实施）
+### 步骤 4：终端创建（cmd/bash）与编码处理 ✅ 已完成
 
 `getSharedTerminal()` 当前只传 `name/cwd`，且 `sendText` 前缀命令假定 PowerShell。改为显式指定 shell：
 
@@ -128,11 +128,10 @@ function getSharedTerminal(cwd: string, compilerDir: string): vscode.Terminal {
 
 - **shellPath 显式化**：`cmd.exe` 保证 `&&`、`if exist`、`del /q` 等命令文本语义稳定。若需支持 bash（git-bash/WSL），增加 shell 类型判定分支：bash 下用 `&&` 串联、`rm -f`、`mkdir -p`，路径分隔符与引号规则分别处理；Windows 编译器工具链下 cmd 为推荐默认。
 - **编码（重点）**：
-  - F2MC 编译器工具（fcc896s 等）输出为 ANSI 编码（中文系统即 GBK/CP936），错误信息含日文/中文时按 CP936 解码才能正确显示。
-  - cmd 终端创建后先发送 `chcp 936 >nul`（或保持系统默认代码页不发送 chcp），使 conpty 按 GBK 解码，编译器中文输出不乱码。
-  - 不要沿用 bat 方案的 `chcp 65001`：65001 下 GBK 工具输出会乱码。原 bat 设 65001 只是为了让 bat 文件内 UTF-8 的 echo 中文正常；终端直跑方案中 echo 文本由扩展以 Unicode 经 `sendText` 传入，VS Code 会正确处理，无需 65001。
-  - 折中：若 echo 提示文本也出现乱码（某些 conpty 版本对 sendText 的非 ASCII 文本处理不一致），提示语改为纯英文/ASCII 最稳妥。
-  - 由此 `sendText` 的命令文本只含 ASCII 命令 + 路径参数，路径含非 ASCII 时加双引号即可（cmd 对引号内 UTF-16 传入的路径处理正常）。
+  - F2MC 编译器工具（fcc896s 等）输出为 ANSI 编码（中文系统 GBK/CP936，日文系统 SJIS/CP932）。
+  - **最终实现：不发送任何 `chcp`**。cmd 终端默认沿用系统 OEM 代码页，与工具 ANSI 输出天然匹配（中文 936 / 日文 932 均正确），比硬编码 `chcp 936` 更稳妥，也避免 65001 下 GBK/SJIS 输出乱码。
+  - 原 bat 设 `chcp 65001` 只是为了让 bat 文件内 UTF-8 的 echo 中文正常；终端直跑方案中 echo 文本由扩展以 Unicode 经 `sendText` 传入，VS Code 会正确处理，无需 65001。
+  - 由此 `sendText` 的命令文本只含 ASCII 命令 + 引号包裹的路径参数；构建前对工程派生值（文件名/目录/配置名）做 `"` 与换行校验（`findUnsafeCmdValue`），echo 操作数一律双引号包裹，防止 cmd 元字符注入。
 - **env 注入时机**：`env` 只在终端**创建时**生效，编译器路径变化后需 dispose 旧终端重建（监听 `onDidChangeConfiguration`，或每次构建前比对当前终端使用的 compilerDir，不一致则 `sharedTerminal.dispose()` 后置空重建）。这比 bat 里的 `set PATH=...` 干净，命令行直接写 `fcc896s.exe` 即可。
 
 ### 步骤 5：同步 IntelliSense include 路径（cppConfigurationProvider.ts）✅ 已完成
@@ -140,9 +139,9 @@ function getSharedTerminal(cwd: string, compilerDir: string): vscode.Terminal {
 - `getStandardLibPath()` 已重构为 `getStandardLibPaths(): string[]`，经 `toolchain.ts` 的 `resolveCompilerIncludeDirectory()` 从 `compilerPath` 设置推导 `<root>/Lib/896/include`（Windows 文件系统大小写不敏感，原 `INCLUDE` 大写目录亦可命中）。
 - 未配置编译器路径时返回空数组，cpptools 容忍缺失路径（IntelliSense 仅缺少标准头解析）。
 - 芯片表 `896.csv` 与工具链解耦：`chipCatalog.ts` 已改为读取扩展内置的 `res/896.csv`（随插件打包的纯数据文件），不再依赖编译器目录。
-- 待办：设置变更后调用 cpptools 的 `notifyDidChange` 刷新配置（当前 `refresh()` 为空实现）。
+- `compilerPath` 设置变更时通过 `C_Cpp.RescanWorkspace` 触发 cpptools 重新扫描（`onDidChangeConfiguration` 监听，已完成）。
 
-### 步骤 6：设置页便捷入口（待实施）
+### 步骤 6：设置页便捷入口 ✅ 已完成
 
 在 `settingsTree.ts` 的「设置」视图根节点新增「工具链安装」节点（位于「构建器选项」下方），交互设计详见 `softune-toolchain-guide.md` 第 9 章：
 
@@ -162,7 +161,9 @@ function getSharedTerminal(cwd: string, compilerDir: string): vscode.Terminal {
    - 设置为无效目录 → 构建前警告且不发送命令；
    - clean 命令 → 中间产物被正确删除；
    - 切换 `compilerPath` 后再次构建 → 终端重建且使用新路径；
-   - 路径含空格/非 ASCII 字符 → 双引号包裹后 cmd 下解析正确，编译器中文输出无乱码（chcp 936）；
+   - 路径含空格/非 ASCII 字符 → 双引号包裹后 cmd 下解析正确，编译器中文输出无乱码（系统 OEM 代码页）；
+   - 超大工程（命令行分块后仍逐条 sendText，`__F2MC_ERR` 标志保证失败即停）→ 构建成功；
+   - 工程配置含 `"` 等非法字符 → 构建前警告并拒绝执行；
    - 「工具链安装」下载 V30L14/V30L15 → 解压到 `%USERPROFILE%\.f2mc-8fx-wb\toolchain` 后检测为 ✓ 且可编译。
 
 ## 4. 影响面汇总
@@ -171,11 +172,12 @@ function getSharedTerminal(cwd: string, compilerDir: string): vscode.Terminal {
 |---|---|---|
 | `package.json` | 新增 `f2mc-8fx-workbench.compilerPath` 设置项 | ✅ |
 | `src/toolchain.ts` | 新增模块：编译器路径解析 / 工具校验 / include 推导 | ✅ |
-| `src/buildRunner.ts` | 路径解析/校验接线；去 bat 化、终端 env 注入、终端重建逻辑 | 部分（接线 ✅，去 bat 待实施） |
-| `src/cppConfigurationProvider.ts` | include 路径改为跟随设置 | ✅ |
+| `src/buildRunner.ts` | 路径解析/校验接线；去 bat 化、终端 env 注入、终端重建逻辑 | ✅ |
+| `src/cppConfigurationProvider.ts` | include 路径改为跟随设置；compilerPath 变更触发重扫 | ✅ |
 | `src/chipCatalog.ts` | 芯片表改读 `res/896.csv` | ✅ |
-| `src/settingsTree.ts` | 新增「工具链安装」入口节点 | 待实施 |
-| `src/extension.ts` | 注册工具链安装/选择目录命令；`onDidChangeConfiguration` 监听 | 待实施 |
+| `src/settingsTree.ts` | 新增「工具链安装」入口节点 | ✅ |
+| `src/toolchainInstaller.ts` | 新增模块：QuickPick 版本选择、GitHub 下载、tar 解压、写设置 | ✅ |
+| `src/extension.ts` | 注册 `f2mc_workbench.settings.installToolchain` 命令 | ✅ |
 | `res/compiler/` | 已删除，不再随插件打包 | ✅ |
 | `res/896.csv` | 芯片目录数据（自 res/compiler 迁出） | ✅ |
 | `toolchain/*.tar.gz` | V30L14 / V30L15 工具链压缩包，供用户自行下载 | ✅ |
@@ -186,5 +188,5 @@ function getSharedTerminal(cwd: string, compilerDir: string): vscode.Terminal {
 - **终端退出码不可达**：`sendText` 无法回传结果，构建成功/失败只能依赖终端文本。若后续要做「构建成功自动下载」等联动，需引入 shell integration（`window.onDidEndTerminalShellExecution`，VS Code ≥1.93）或改用 `vscode.tasks` + `ShellExecution` + problem matcher。
 - **env 注入时机**：Terminal 的 `env` 仅创建时生效，切换编译器路径必须重建终端，否则会沿用旧 PATH。
 - **PowerShell vs cmd**：现有 `sendText` 前缀命令（`Set-Location -LiteralPath`、`Clear-Host`）假定 PowerShell。重构后显式 `shellPath: 'cmd.exe'` 创建终端，命令文本统一按 cmd 语法生成（`&&` 串联、`if exist`、`del /q`）；如需 bash 支持则按 shell 类型分支生成，不允许依赖用户默认 shell。
-- **编码**：编译器输出为 ANSI/GBK，终端保持 CP936（发送 `chcp 936 >nul` 或沿用系统默认），**不要**沿用 bat 方案的 `chcp 65001`；`sendText` 的提示文本若出现乱码则降级为纯 ASCII。扩展侧写入 `.opl` 等选项文件的 ANSI 转换（`convertFileToAnsiEncoding`）保持不变。
+- **编码**：编译器输出为 ANSI（GBK/SJIS），终端沿用系统 OEM 代码页（不发送 chcp，与工具输出天然匹配）；`sendText` 的提示文本若出现乱码则降级为纯 ASCII。扩展侧写入 `.opl` 等选项文件的 ANSI 转换（`convertFileToAnsiEncoding`）保持不变。
 - **兼容性**：扩展已不再内置编译器（`res/compiler` 已删除），未配置 `compilerPath` 的用户升级后需通过「工具链安装」下载或手动指定本机 SOFTUNE 目录；`toolchain.ts` 保留了对内置目录的回退检测，仅供开发调试时临时放回工具链使用。
