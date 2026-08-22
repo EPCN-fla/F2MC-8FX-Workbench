@@ -9,6 +9,28 @@ import type { F2mcProjectConfig } from './types';
 
 const LEGACY_CONFIG_FILE_NAMES = [CONFIG_FILE_NAME, 'f2mc_workbench.json'];
 
+const GITIGNORE_MARKER = '# F2MC-8FX Workbench';
+const GITIGNORE_BLOCK = [
+	GITIGNORE_MARKER,
+	`${HELPER_DIR_NAME}/intellisense/`,
+	'',
+	'# project out',
+	'*.abs',
+	'*.mhx',
+	'*.ihx',
+	'*.ehx',
+	'*.hex',
+	'',
+	'# build files',
+	'*.mp1',
+	'*.obj',
+	'*.lst',
+	'*.map',
+	'*.stk',
+	'*.tpi',
+	'*.sup'
+];
+
 export async function discoverProjectConfig(): Promise<F2mcProjectConfig | undefined> {
 	const folders = vscode.workspace.workspaceFolders ?? [];
 	for (const folder of folders) {
@@ -87,6 +109,26 @@ async function pathExists(targetPath: string): Promise<boolean> {
 export async function persistProjectConfig(config: F2mcProjectConfig): Promise<void> {
 	await vscode.workspace.fs.createDirectory(vscode.Uri.file(path.join(config.rootPath, HELPER_DIR_NAME)));
 	await writeJsonFile(path.join(config.rootPath, HELPER_DIR_NAME, CONFIG_FILE_NAME), config);
+}
+
+export async function createProjectGitignore(config: F2mcProjectConfig): Promise<string> {
+	const gitignorePath = path.join(config.rootPath, '.gitignore');
+	let existing = '';
+	try {
+		const bytes = await vscode.workspace.fs.readFile(vscode.Uri.file(gitignorePath));
+		existing = Buffer.from(bytes).toString('utf8');
+	} catch {
+		// .gitignore does not exist yet.
+	}
+
+	if (!existing.includes(GITIGNORE_MARKER)) {
+		const separator = existing.length > 0 ? (existing.endsWith('\n') ? '\n' : '\n\n') : '';
+		await vscode.workspace.fs.writeFile(
+			vscode.Uri.file(gitignorePath),
+			Buffer.from(existing + separator + GITIGNORE_BLOCK.join('\n') + '\n', 'utf8')
+		);
+	}
+	return gitignorePath;
 }
 
 export async function createVsCodeWorkspace(config: F2mcProjectConfig): Promise<string> {

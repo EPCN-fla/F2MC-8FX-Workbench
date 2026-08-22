@@ -135,11 +135,12 @@ class F2mcCppConfigurationProvider implements CustomConfigurationProvider {
 		}
 
 		const rootPath = path.normalize(config.rootPath).toLowerCase();
-		if (!filePath.startsWith(rootPath + path.sep)) {
-			return false;
-		}
+		return filePath.startsWith(rootPath + path.sep) && !this.isHelperPath(rootPath, filePath);
+	}
+
+	private isHelperPath(rootPathLower: string, filePathLower: string): boolean {
 		const helperDirs = [HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME];
-		return !helperDirs.some(dir => filePath.includes(`${path.sep}${dir.toLowerCase()}${path.sep}`));
+		return helperDirs.some(dir => filePathLower.includes(`${path.sep}${dir.toLowerCase()}${path.sep}`));
 	}
 
 	public async provideConfigurations(uris: vscode.Uri[]): Promise<SourceFileConfigurationItem[]> {
@@ -174,7 +175,15 @@ class F2mcCppConfigurationProvider implements CustomConfigurationProvider {
 			// The vendor I/O headers have no include guards, so force-include a guarded
 			// shim instead of the headers directly. Files that are textually included by
 			// another source file (e.g. main.c includes RF.c) additionally need the
-			// including file's include context.
+			// including file's include context. cpptools may re-query URIs cached from
+			// earlier sessions without calling canProvideConfiguration first, so the
+			// helper-dir exclusion must be enforced here as well to avoid shimming our
+			// own generated headers recursively.
+			const filePathLower = path.normalize(uri.fsPath).toLowerCase();
+			if (this.isHelperPath(path.normalize(config.rootPath).toLowerCase(), filePathLower)) {
+				result.push({ uri, configuration });
+				continue;
+			}
 			const shimLines = this.buildShimIncludeLines(project, uri.fsPath, ioRegisterHeaders.familyHeader, parentByDep);
 			if (shimLines) {
 				const shimHeader = await this.ensureShimHeader(config.rootPath, uri.fsPath, shimLines);

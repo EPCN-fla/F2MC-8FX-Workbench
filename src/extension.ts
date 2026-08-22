@@ -10,7 +10,7 @@ import type { F2mcChipInfo } from './chipCatalog';
 import { PROJECT_CONTEXT } from './constants';
 import { registerCppConfigurationProvider } from './cppConfigurationProvider';
 import { parsePrjProject, parseWspProject } from './projectParser';
-import { createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
+import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
 import { saveProjectFiles } from './projectWriter';
 import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './settingsTree';
@@ -208,6 +208,7 @@ async function importWspProject(outputChannel: vscode.OutputChannel): Promise<vo
 	const config = await parseWspProject(wspPath);
 	await persistProjectConfig(config);
 	const workspaceFile = await createVsCodeWorkspace(config);
+	const gitignoreFile = await createProjectGitignore(config);
 
 	const openAction = '打开工作区';
 	const laterAction = '稍后';
@@ -219,6 +220,7 @@ async function importWspProject(outputChannel: vscode.OutputChannel): Promise<vo
 
 	outputChannel.appendLine(`[import] .wsp: ${wspPath}`);
 	outputChannel.appendLine(`[import] workspace: ${workspaceFile}`);
+	outputChannel.appendLine(`[import] gitignore: ${gitignoreFile}`);
 
 	if (choice === openAction) {
 		await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(workspaceFile), false);
