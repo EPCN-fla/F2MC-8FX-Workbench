@@ -1,10 +1,10 @@
+import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
 import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
-import { resolvePath } from './pathUtils';
 import { findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
@@ -41,12 +41,13 @@ const CMD_LINE_LENGTH_LIMIT = 6000;
 
 const UNSAFE_CMD_VALUE_PATTERN = /["\r\n]/;
 
+const UNSAFE_CMD_DISPLAY_PATTERN = /["\r\n&|%()^<>]/;
+
 function isCmdSafeValue(value: string): boolean {
 	return !UNSAFE_CMD_VALUE_PATTERN.test(value);
 }
 
 let sharedTerminal: vscode.Terminal | undefined;
-let sharedTerminalCompilerDirectory: string | undefined;
 
 export async function runProjectTask(
 	config: F2mcProjectConfig,
@@ -54,13 +55,11 @@ export async function runProjectTask(
 	outputChannel: vscode.OutputChannel,
 	extensionPath: string
 ): Promise<void> {
-	const command = await resolveBuildCommand(config, kind, extensionPath);
+	const command = await createBuiltInCommand(config, kind, extensionPath);
 	if (!command) {
 		void vscode.window.showWarningMessage('未找到可执行的编译命令，请检查工程配置和编译器路径（f2mc-8fx-workbench.compilerPath）。');
 		return;
 	}
-
-	const terminal = getSharedTerminal(command.cwd, command.compilerDirectory);
 
 	if (!isCmdSafeValue(command.cwd)) {
 		void vscode.window.showWarningMessage('工作目录包含非法字符（"），无法执行构建。');
@@ -71,27 +70,90 @@ export async function runProjectTask(
 	for (const commandLine of command.commandLines) {
 		outputChannel.appendLine(`[${kind}] command: ${commandLine}`);
 	}
-	terminal.show(true);
-	terminal.sendText(`cd /d "${command.cwd}"`, true);
-	for (const commandLine of command.commandLines) {
-		terminal.sendText(commandLine, true);
+
+	sharedTerminal?.dispose();
+	const pty = new F2mcBuildPseudoterminal(command.commandLines.join(' & '), command.cwd, command.compilerDirectory);
+	sharedTerminal = vscode.window.createTerminal({ name: 'F2MC-8FX', pty, isTransient: true });
+	sharedTerminal.show(true);
+}
+
+class F2mcBuildPseudoterminal implements vscode.Pseudoterminal {
+	private readonly writeEmitter = new vscode.EventEmitter<string>();
+	private readonly closeEmitter = new vscode.EventEmitter<void | number>();
+	public readonly onDidWrite = this.writeEmitter.event;
+	public readonly onDidClose = this.closeEmitter.event;
+	private child: childProcess.ChildProcess | undefined;
+	private finished = false;
+
+	public constructor(
+		private readonly commandLine: string,
+		private readonly cwd: string,
+		private readonly compilerDirectory: string | undefined
+	) {
+	}
+
+	public open(): void {
+		const env = this.compilerDirectory
+			? { ...process.env, PATH: `${this.compilerDirectory}${path.delimiter}${process.env.PATH ?? ''}` }
+			: { ...process.env };
+		const writeOutput = (data: Buffer): void => {
+			this.writeEmitter.fire(decodeToolOutput(data));
+		};
+
+		this.child = childProcess.spawn('cmd.exe', ['/d', '/c', this.commandLine], { cwd: this.cwd, env, windowsVerbatimArguments: true });
+		this.child.stdout?.on('data', writeOutput);
+		this.child.stderr?.on('data', writeOutput);
+		this.child.on('error', error => {
+			this.finished = true;
+			this.writeEmitter.fire(`\r\nFailed to start build: ${error.message}\r\nPress any key to close...\r\n`);
+		});
+		this.child.on('close', () => {
+			this.finished = true;
+			this.writeEmitter.fire('\r\nPress any key to close...\r\n');
+		});
+	}
+
+	public close(): void {
+		this.child?.kill();
+	}
+
+	public handleInput(): void {
+		if (this.finished) {
+			this.closeEmitter.fire(0);
+		}
 	}
 }
 
-async function resolveBuildCommand(config: F2mcProjectConfig, kind: BuildKind, extensionPath: string): Promise<CommandSpec | undefined> {
-	const settings = vscode.workspace.getConfiguration('f2mc-8fx-workbench');
-	const workingDirectory = settings.get<string>('buildWorkingDirectory') || '.';
-	const cwd = resolvePath(replaceVariables(workingDirectory, config, kind), config.rootPath);
-	const template = settings.get<string>('buildCommandTemplate') || '';
+const CODEPAGE_ENCODINGS: Record<string, string> = {
+	'936': 'gbk',
+	'950': 'big5',
+	'932': 'shift-jis',
+	'949': 'euc-kr',
+	'65001': 'utf-8'
+};
 
-	if (template.trim()) {
-		return {
-			cwd,
-			commandLines: [replaceVariables(template, config, kind)]
-		};
+let cachedToolEncoding: string | undefined;
+
+function getToolOutputEncoding(): string {
+	if (!cachedToolEncoding) {
+		try {
+			const output = childProcess.execFileSync('cmd.exe', ['/d', '/c', 'chcp'], { encoding: 'utf8' });
+			const match = /(\d+)/.exec(output);
+			cachedToolEncoding = (match && CODEPAGE_ENCODINGS[match[1]]) || 'utf-8';
+		} catch {
+			cachedToolEncoding = 'utf-8';
+		}
 	}
+	return cachedToolEncoding;
+}
 
-	return createBuiltInCommand(config, kind, extensionPath);
+let cachedDecoder: TextDecoder | undefined;
+
+function decodeToolOutput(data: Buffer): string {
+	if (!cachedDecoder) {
+		cachedDecoder = new TextDecoder(getToolOutputEncoding());
+	}
+	return cachedDecoder.decode(data, { stream: true });
 }
 
 async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, extensionPath: string): Promise<CommandSpec | undefined> {
@@ -141,6 +203,12 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 }
 
 function findUnsafeCmdValue(layout: BuildLayout): string | undefined {
+	const unsafeDisplayValue = [layout.projectName, layout.activeCfgBaseName ?? '']
+		.find(value => UNSAFE_CMD_DISPLAY_PATTERN.test(value));
+	if (unsafeDisplayValue) {
+		return unsafeDisplayValue;
+	}
+
 	const values = [
 		layout.projectRootPath,
 		layout.objDirectory,
@@ -339,24 +407,6 @@ function quoteOptionPath(value: string): string {
 	return `"${value.replace(/"/g, '\\"')}"`;
 }
 
-function getSharedTerminal(cwd: string, compilerDirectory: string | undefined): vscode.Terminal {
-	if (sharedTerminal && !sharedTerminal.exitStatus && sharedTerminalCompilerDirectory === compilerDirectory) {
-		return sharedTerminal;
-	}
-
-	sharedTerminal?.dispose();
-	sharedTerminal = vscode.window.createTerminal({
-		name: 'F2MC-8FX',
-		shellPath: 'cmd.exe',
-		cwd,
-		env: compilerDirectory
-			? { PATH: `${compilerDirectory}${path.delimiter}${process.env.PATH ?? ''}` }
-			: undefined
-	});
-	sharedTerminalCompilerDirectory = compilerDirectory;
-	return sharedTerminal;
-}
-
 function createBuildCommandLines(layout: BuildLayout): string[] {
 	const parts = createBuildCommandParts(layout);
 	const lines = ['set "__F2MC_ERR="'];
@@ -384,7 +434,7 @@ function createBuildCommandParts(layout: BuildLayout): string[] {
 	const converterExe = resolveConverterExe(layout);
 	return [
 		'echo Now building...',
-		`echo "--------------------Configuration: ${layout.projectName} - ${layout.activeCfgBaseName}--------------------"`,
+		`echo --------------------Configuration: ${layout.projectName} - ${layout.activeCfgBaseName}--------------------`,
 		...layout.project.sourceFiles.flatMap(sourceFile => createCompileCommand(layout, sourceFile)),
 		...layout.project.assemblerFiles.flatMap(assemblerFile => createAssemblerCommand(layout, assemblerFile)),
 		'echo Now linking...',
@@ -463,19 +513,7 @@ function createCleanCommand(layout: BuildLayout): string {
 }
 
 function createCleanDirectoryCommands(directoryPath: string, patterns: string[]): string[] {
-	return patterns.map(pattern => `if exist "${path.join(directoryPath, pattern)}" del /q "${path.join(directoryPath, pattern)}"`);
-}
-
-function replaceVariables(template: string, config: F2mcProjectConfig, kind: BuildKind): string {
-	const activeProject = getActiveProject(config);
-	const projectPath = activeProject?.path ?? '';
-	return template
-		.replace(/\$\{kind\}/g, kind)
-		.replace(/\$\{workspaceFolder\}/g, config.rootPath)
-		.replace(/\$\{wspPath\}/g, config.wspPath)
-		.replace(/\$\{projectPath\}/g, projectPath)
-		.replace(/\$\{projectName\}/g, activeProject?.name ?? '')
-		.replace(/\$\{projectDir\}/g, projectPath ? path.dirname(projectPath) : config.rootPath);
+	return patterns.map(pattern => `del /q "${path.join(directoryPath, pattern)}" 2>nul`);
 }
 
 function getActiveProject(config: F2mcProjectConfig): F2mcProjectInfo | undefined {
