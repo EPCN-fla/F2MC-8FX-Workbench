@@ -1,22 +1,22 @@
+import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
 import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
-import { quoteShell, resolvePath } from './pathUtils';
+import { findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 interface CommandSpec {
-	commandLine: string;
+	commandLines: string[];
 	cwd: string;
+	compilerDirectory?: string;
 }
 
 interface BuildLayout {
 	project: F2mcProjectInfo;
 	projectRootPath: string;
-	compilerDirectory: string;
-	configDirectory: string;
 	objDirectory: string;
 	lstDirectory: string;
 	optDirectory: string;
@@ -37,21 +37,15 @@ interface DatOptions {
 	converter: string[];
 }
 
-const TASK_TITLES: Record<BuildKind, string> = {
-	build: 'F2MC-8FX Build',
-	clean: 'F2MC-8FX Clean',
-	download: 'F2MC-8FX Download'
-};
+const CMD_LINE_LENGTH_LIMIT = 6000;
 
-const COMPILER_TOOLS = [
-	{ file: 'fcc896s.exe' },
-	{ file: 'FASM896S.EXE' },
-	{ file: 'FLNK896S.EXE' },
-	{ file: 'F2MS.EXE' },
-	{ file: 'F2IS.EXE' },
-	{ file: 'F2ES.EXE' },
-	{ file: 'F2HS.EXE' }
-] as const;
+const UNSAFE_CMD_VALUE_PATTERN = /["\r\n]/;
+
+const UNSAFE_CMD_DISPLAY_PATTERN = /["\r\n&|%()^<>]/;
+
+function isCmdSafeValue(value: string): boolean {
+	return !UNSAFE_CMD_VALUE_PATTERN.test(value);
+}
 
 let sharedTerminal: vscode.Terminal | undefined;
 
@@ -61,35 +55,105 @@ export async function runProjectTask(
 	outputChannel: vscode.OutputChannel,
 	extensionPath: string
 ): Promise<void> {
-	const command = await resolveBuildCommand(config, kind, extensionPath);
+	const command = await createBuiltInCommand(config, kind, extensionPath);
 	if (!command) {
-		void vscode.window.showWarningMessage('未找到可执行的编译命令，请检查工程配置和 res/compiler。');
+		void vscode.window.showWarningMessage('未找到可执行的编译命令，请检查工程配置和编译器路径（f2mc-8fx-workbench.compilerPath）。');
 		return;
 	}
 
-	const terminal = getSharedTerminal(command.cwd);
-
-	outputChannel.appendLine(`[${kind}] cwd: ${command.cwd}`);
-	outputChannel.appendLine(`[${kind}] command: ${command.commandLine}`);
-	terminal.show(true);
-	terminal.sendText(`Set-Location -LiteralPath ${quotePowerShellLiteral(command.cwd)}`, true);
-	terminal.sendText(`Clear-Host; ${command.commandLine}`, true);
-}
-
-async function resolveBuildCommand(config: F2mcProjectConfig, kind: BuildKind, extensionPath: string): Promise<CommandSpec | undefined> {
-	const settings = vscode.workspace.getConfiguration('f2mc-8fx-workbench');
-	const workingDirectory = settings.get<string>('buildWorkingDirectory') || '.';
-	const cwd = resolvePath(replaceVariables(workingDirectory, config, kind), config.rootPath);
-	const template = settings.get<string>('buildCommandTemplate') || '';
-
-	if (template.trim()) {
-		return {
-			cwd,
-			commandLine: replaceVariables(template, config, kind)
-		};
+	if (!isCmdSafeValue(command.cwd)) {
+		void vscode.window.showWarningMessage('工作目录包含非法字符（"），无法执行构建。');
+		return;
 	}
 
-	return createBuiltInCommand(config, kind, extensionPath);
+	outputChannel.appendLine(`[${kind}] cwd: ${command.cwd}`);
+	for (const commandLine of command.commandLines) {
+		outputChannel.appendLine(`[${kind}] command: ${commandLine}`);
+	}
+
+	sharedTerminal?.dispose();
+	const pty = new F2mcBuildPseudoterminal(command.commandLines.join(' & '), command.cwd, command.compilerDirectory);
+	sharedTerminal = vscode.window.createTerminal({ name: 'F2MC-8FX', pty, isTransient: true });
+	sharedTerminal.show(true);
+}
+
+class F2mcBuildPseudoterminal implements vscode.Pseudoterminal {
+	private readonly writeEmitter = new vscode.EventEmitter<string>();
+	private readonly closeEmitter = new vscode.EventEmitter<void | number>();
+	public readonly onDidWrite = this.writeEmitter.event;
+	public readonly onDidClose = this.closeEmitter.event;
+	private child: childProcess.ChildProcess | undefined;
+	private finished = false;
+
+	public constructor(
+		private readonly commandLine: string,
+		private readonly cwd: string,
+		private readonly compilerDirectory: string | undefined
+	) {
+	}
+
+	public open(): void {
+		const env = this.compilerDirectory
+			? { ...process.env, PATH: `${this.compilerDirectory}${path.delimiter}${process.env.PATH ?? ''}` }
+			: { ...process.env };
+		const writeOutput = (data: Buffer): void => {
+			this.writeEmitter.fire(decodeToolOutput(data));
+		};
+
+		this.child = childProcess.spawn('cmd.exe', ['/d', '/c', this.commandLine], { cwd: this.cwd, env, windowsVerbatimArguments: true });
+		this.child.stdout?.on('data', writeOutput);
+		this.child.stderr?.on('data', writeOutput);
+		this.child.on('error', error => {
+			this.finished = true;
+			this.writeEmitter.fire(`\r\nFailed to start build: ${error.message}\r\nPress any key to close...\r\n`);
+		});
+		this.child.on('close', () => {
+			this.finished = true;
+			this.writeEmitter.fire('\r\nPress any key to close...\r\n');
+		});
+	}
+
+	public close(): void {
+		this.child?.kill();
+	}
+
+	public handleInput(): void {
+		if (this.finished) {
+			this.closeEmitter.fire(0);
+		}
+	}
+}
+
+const CODEPAGE_ENCODINGS: Record<string, string> = {
+	'936': 'gbk',
+	'950': 'big5',
+	'932': 'shift-jis',
+	'949': 'euc-kr',
+	'65001': 'utf-8'
+};
+
+let cachedToolEncoding: string | undefined;
+
+function getToolOutputEncoding(): string {
+	if (!cachedToolEncoding) {
+		try {
+			const output = childProcess.execFileSync('cmd.exe', ['/d', '/c', 'chcp'], { encoding: 'utf8' });
+			const match = /(\d+)/.exec(output);
+			cachedToolEncoding = (match && CODEPAGE_ENCODINGS[match[1]]) || 'utf-8';
+		} catch {
+			cachedToolEncoding = 'utf-8';
+		}
+	}
+	return cachedToolEncoding;
+}
+
+let cachedDecoder: TextDecoder | undefined;
+
+function decodeToolOutput(data: Buffer): string {
+	if (!cachedDecoder) {
+		cachedDecoder = new TextDecoder(getToolOutputEncoding());
+	}
+	return cachedDecoder.decode(data, { stream: true });
 }
 
 async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, extensionPath: string): Promise<CommandSpec | undefined> {
@@ -103,28 +167,74 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 		return undefined;
 	}
 
-	const layout = createBuildLayout(project, extensionPath);
+	const compilerDirectory = resolveCompilerDirectory(extensionPath);
+	if (!compilerDirectory) {
+		void vscode.window.showWarningMessage('未找到编译器。请在设置中配置 f2mc-8fx-workbench.compilerPath 指向 SOFTUNE 编译器目录（Bin 目录或其上一级）。');
+		return undefined;
+	}
+
+	const missingTools = findMissingCompilerTools(compilerDirectory);
+	if (missingTools.length > 0) {
+		void vscode.window.showWarningMessage(`编译器目录缺少工具: ${missingTools.join(', ')}（${compilerDirectory}）`);
+		return undefined;
+	}
+
+	const layout = createBuildLayout(project);
 	if (!layout) {
+		return undefined;
+	}
+
+	const unsafeValue = findUnsafeCmdValue(layout);
+	if (unsafeValue) {
+		void vscode.window.showWarningMessage(`工程配置包含非法字符（"），无法构建：${unsafeValue}`);
 		return undefined;
 	}
 
 	if (kind === 'build') {
 		await writeOptionFiles(layout);
+		await ensureBuildDirectories(layout);
 	}
-
-	const scriptPath = path.join(layout.projectRootPath, '.f2mc-helper', kind === 'clean' ? 'clean.bat' : 'build.bat');
-	const scriptContent = kind === 'clean'
-		? createCleanScript(layout)
-		: createBuildScript(layout);
-	await writeTextFile(scriptPath, scriptContent);
 
 	return {
 		cwd: layout.projectRootPath,
-		commandLine: createScriptExecutionCommand(scriptPath)
+		compilerDirectory,
+		commandLines: kind === 'clean' ? [createCleanCommand(layout)] : createBuildCommandLines(layout)
 	};
 }
 
-function createBuildLayout(project: F2mcProjectInfo, extensionPath: string): BuildLayout | undefined {
+function findUnsafeCmdValue(layout: BuildLayout): string | undefined {
+	const unsafeDisplayValue = [layout.projectName, layout.activeCfgBaseName ?? '']
+		.find(value => UNSAFE_CMD_DISPLAY_PATTERN.test(value));
+	if (unsafeDisplayValue) {
+		return unsafeDisplayValue;
+	}
+
+	const values = [
+		layout.projectRootPath,
+		layout.objDirectory,
+		layout.lstDirectory,
+		layout.optDirectory,
+		layout.projectName,
+		layout.activeCfgBaseName ?? '',
+		layout.loadModulePath,
+		layout.convertedModulePath,
+		layout.mapFilePath,
+		...layout.project.sourceFiles,
+		...layout.project.assemblerFiles,
+		...layout.project.libraryFiles
+	];
+	return values.find(value => !isCmdSafeValue(value));
+}
+
+async function ensureBuildDirectories(layout: BuildLayout): Promise<void> {
+	await Promise.all([
+		fs.promises.mkdir(layout.objDirectory, { recursive: true }),
+		fs.promises.mkdir(layout.lstDirectory, { recursive: true }),
+		fs.promises.mkdir(layout.optDirectory, { recursive: true })
+	]);
+}
+
+function createBuildLayout(project: F2mcProjectInfo): BuildLayout | undefined {
 	if (!project.path || !project.optionFile || !project.activeConfiguration || !project.directories?.config || !project.directories.obj || !project.directories.lst || !project.directories.opt) {
 		return undefined;
 	}
@@ -146,8 +256,6 @@ function createBuildLayout(project: F2mcProjectInfo, extensionPath: string): Bui
 	return {
 		project,
 		projectRootPath,
-		compilerDirectory: path.join(extensionPath, 'res', 'compiler', 'Bin'),
-		configDirectory: project.directories.config,
 		objDirectory: project.directories.obj,
 		lstDirectory: project.directories.lst,
 		optDirectory: project.directories.opt,
@@ -163,15 +271,13 @@ function createBuildLayout(project: F2mcProjectInfo, extensionPath: string): Bui
 
 async function writeOptionFiles(layout: BuildLayout): Promise<void> {
 	const options = await readDatOptions(layout.project.optionFile);
-	const optDirectory = layout.optDirectory;
-	const optionBaseName = layout.optionBaseName;
 	const outputExt = resolveOutputExtensionFromOpt(layout);
 	await Promise.all([
-		writeTextFile(path.join(optDirectory, `${optionBaseName}.opc`), createCompileOptions(layout, options)),
-		writeTextFile(path.join(optDirectory, `${optionBaseName}.opa`), createAssemblerOptions(layout, options)),
-		writeAnsiTextFile(path.join(optDirectory, `${optionBaseName}.opl`), createLinkerOptions(layout, options)),
-		writeAnsiTextFile(path.join(optDirectory, `${optionBaseName}.opb`), createLibrarianOptions(layout, options)),
-		writeAnsiTextFile(path.join(optDirectory, `${optionBaseName}.opv`), createConverterOptions(layout, options, outputExt))
+		writeTextFile(createOptionFilePath(layout, 'opc'), createCompileOptions(layout, options)),
+		writeTextFile(createOptionFilePath(layout, 'opa'), createAssemblerOptions(layout, options)),
+		writeAnsiTextFile(createOptionFilePath(layout, 'opl'), createLinkerOptions(layout, options)),
+		writeAnsiTextFile(createOptionFilePath(layout, 'opb'), createLibrarianOptions(layout, options)),
+		writeAnsiTextFile(createOptionFilePath(layout, 'opv'), createConverterOptions(layout, options, outputExt))
 	]);
 }
 
@@ -301,74 +407,49 @@ function quoteOptionPath(value: string): string {
 	return `"${value.replace(/"/g, '\\"')}"`;
 }
 
-function createScriptExecutionCommand(scriptPath: string): string {
-	const quotedPath = quoteShell(scriptPath);
-	const psPath = scriptPath.replace(/'/g, "''");
-	return `& ${quotedPath}; Remove-Item -LiteralPath '${psPath}' -Force`;
-}
-
-function getSharedTerminal(cwd: string): vscode.Terminal {
-	if (!sharedTerminal || sharedTerminal.exitStatus) {
-		sharedTerminal = vscode.window.createTerminal({
-			name: 'F2MC-8FX',
-			cwd
-		});
+function createBuildCommandLines(layout: BuildLayout): string[] {
+	const parts = createBuildCommandParts(layout);
+	const lines = ['set "__F2MC_ERR="'];
+	let current = '';
+	for (const part of parts) {
+		const candidate = current ? `${current} && ${part}` : part;
+		if (current && candidate.length > CMD_LINE_LENGTH_LIMIT) {
+			lines.push(createGuardedChunk(current));
+			current = part;
+		} else {
+			current = candidate;
+		}
 	}
-
-	return sharedTerminal;
+	if (current) {
+		lines.push(createGuardedChunk(current));
+	}
+	return lines;
 }
 
-function quotePowerShellLiteral(value: string): string {
-	return `'${value.replace(/'/g, "''")}'`;
+function createGuardedChunk(chain: string): string {
+	return `if not defined __F2MC_ERR ( ${chain} || set "__F2MC_ERR=1" )`;
 }
 
-function createBuildScript(layout: BuildLayout): string {
+function createBuildCommandParts(layout: BuildLayout): string[] {
 	const converterExe = resolveConverterExe(layout);
-	const lines = [
-		'@echo off',
-		'setlocal enabledelayedexpansion',
-		'chcp 65001 >nul',
-		'',
-		`set "COMPILER_DIR=${layout.compilerDirectory}"`,
-		'set "PATH=%COMPILER_DIR%;%PATH%"',
-		`set "CONFIG_DIR=${layout.configDirectory}"`,
-		`set "OBJ_DIR=${layout.objDirectory}"`,
-		`set "LST_DIR=${layout.lstDirectory}"`,
-		`set "OPT_DIR=${layout.optDirectory}"`,
-		'',
-		...COMPILER_TOOLS.flatMap(tool => [
-			`if not exist "%COMPILER_DIR%\\${tool.file}" (`,
-			`    echo Error: ${tool.file} not found in %COMPILER_DIR%`,
-			'    exit /b 1',
-			')'
-		]),
-		'',
-		'if not exist "%OBJ_DIR%" mkdir "%OBJ_DIR%"',
-		'if not exist "%LST_DIR%" mkdir "%LST_DIR%"',
-		'if not exist "%OPT_DIR%" mkdir "%OPT_DIR%"',
-		'',
+	return [
 		'echo Now building...',
 		`echo --------------------Configuration: ${layout.projectName} - ${layout.activeCfgBaseName}--------------------`,
 		...layout.project.sourceFiles.flatMap(sourceFile => createCompileCommand(layout, sourceFile)),
 		...layout.project.assemblerFiles.flatMap(assemblerFile => createAssemblerCommand(layout, assemblerFile)),
-		'',
 		'echo Now linking...',
-		`flnk896s.exe -f "%OPT_DIR%\\${layout.optionBaseName}.opl" -Xdof`,
-		'if errorlevel 1 exit /b 1',
-		`echo ${layout.loadModulePath}`,
-		'',
+		`flnk896s.exe -f "${createOptionFilePath(layout, 'opl')}" -Xdof`,
+		`echo "${layout.loadModulePath}"`,
 		'echo Now starting load module converter...',
-		`${converterExe} -f "%OPT_DIR%\\${layout.optionBaseName}.opv" -Xdof`,
-		'if errorlevel 1 exit /b 1',
-		`echo ${layout.convertedModulePath}`,
-		'',
-		'echo.',
+		`${converterExe} -f "${createOptionFilePath(layout, 'opv')}" -Xdof`,
+		`echo "${layout.convertedModulePath}"`,
 		'echo ------------------------------',
-		'echo No Error.',
-		'echo ------------------------------',
-		'endlocal'
+		'echo No Error.'
 	];
-	return joinScriptLines(lines);
+}
+
+function createOptionFilePath(layout: BuildLayout, extension: string): string {
+	return path.join(layout.optDirectory, `${layout.optionBaseName}.${extension}`);
 }
 
 function resolveConverterExe(layout: BuildLayout): string {
@@ -380,7 +461,7 @@ function resolveConverterExe(layout: BuildLayout): string {
 }
 
 function resolveOutputExtensionFromOpt(layout: BuildLayout): string {
-	const opvPath = path.join(layout.optDirectory, `${layout.optionBaseName}.opv`);
+	const opvPath = createOptionFilePath(layout, 'opv');
 	return resolveOutputExtensionFromOptPath(opvPath);
 }
 
@@ -407,55 +488,32 @@ function resolveOutputExtensionFromOptPath(opvPath: string): string {
 function createCompileCommand(layout: BuildLayout, sourceFile: string): string[] {
 	const baseName = path.basename(sourceFile, path.extname(sourceFile));
 	return [
-		`echo ${path.basename(sourceFile)}`,
-		`fcc896s.exe -f "%OPT_DIR%\\${layout.optionBaseName}.opc" -Xdof -o "%OBJ_DIR%\\${baseName}.obj" "${sourceFile}" -INF STACK="%OBJ_DIR%\\${baseName}.stk" -@Hf "%OBJ_DIR%\\${baseName}.tpi"`,
-		'if errorlevel 1 exit /b 1'
+		`echo "${path.basename(sourceFile)}"`,
+		`fcc896s.exe -f "${createOptionFilePath(layout, 'opc')}" -Xdof -o "${path.join(layout.objDirectory, `${baseName}.obj`)}" "${sourceFile}" -INF STACK="${path.join(layout.objDirectory, `${baseName}.stk`)}" -@Hf "${path.join(layout.objDirectory, `${baseName}.tpi`)}"`
 	];
 }
 
 function createAssemblerCommand(layout: BuildLayout, assemblerFile: string): string[] {
 	const baseName = path.basename(assemblerFile, path.extname(assemblerFile));
 	return [
-		`echo ${path.basename(assemblerFile)}`,
-		`fasm896s.exe -f "%OPT_DIR%\\${layout.optionBaseName}.opa" -Xdof -o "%OBJ_DIR%\\${baseName}.obj" "${assemblerFile}"`,
-		'if errorlevel 1 exit /b 1',
+		`echo "${path.basename(assemblerFile)}"`,
+		`fasm896s.exe -f "${createOptionFilePath(layout, 'opa')}" -Xdof -o "${path.join(layout.objDirectory, `${baseName}.obj`)}" "${assemblerFile}"`
 	];
 }
 
-function createCleanScript(layout: BuildLayout): string {
-	const lines = [
-		'@echo off',
-		'setlocal',
-		'chcp 65001 >nul',
-		'',
+function createCleanCommand(layout: BuildLayout): string {
+	const parts = [
 		'echo Now cleaning...',
 		...createCleanDirectoryCommands(layout.objDirectory, ['*.obj', '*.stk', '*.tpi']),
 		...createCleanDirectoryCommands(layout.lstDirectory, ['*.lst', '*.map']),
 		...createCleanDirectoryCommands(path.dirname(layout.loadModulePath), ['*.abs', '*.mhx', '*.ihx', '*.ehx', '*.hex', '*.s19']),
-		'echo Clean complete.',
-		'endlocal'
+		'echo Clean complete.'
 	];
-	return joinScriptLines(lines);
+	return parts.join(' & ');
 }
 
 function createCleanDirectoryCommands(directoryPath: string, patterns: string[]): string[] {
-	return patterns.map(pattern => `if exist "${path.join(directoryPath, pattern)}" del /q "${path.join(directoryPath, pattern)}"`);
-}
-
-function joinScriptLines(lines: string[]): string {
-	return lines.length > 0 ? `${lines.join('\r\n')}\r\n` : '\r\n';
-}
-
-function replaceVariables(template: string, config: F2mcProjectConfig, kind: BuildKind): string {
-	const activeProject = getActiveProject(config);
-	const projectPath = activeProject?.path ?? '';
-	return template
-		.replace(/\$\{kind\}/g, kind)
-		.replace(/\$\{workspaceFolder\}/g, config.rootPath)
-		.replace(/\$\{wspPath\}/g, config.wspPath)
-		.replace(/\$\{projectPath\}/g, projectPath)
-		.replace(/\$\{projectName\}/g, activeProject?.name ?? '')
-		.replace(/\$\{projectDir\}/g, projectPath ? path.dirname(projectPath) : config.rootPath);
+	return patterns.map(pattern => `del /q "${path.join(directoryPath, pattern)}" 2>nul`);
 }
 
 function getActiveProject(config: F2mcProjectConfig): F2mcProjectInfo | undefined {

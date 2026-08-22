@@ -6,6 +6,28 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.1.0]
+
+**新增**:
+  - 工具链下载功能
+  - vscode 插件设置页面自定义工具链路径
+  - 底部状态栏显示编译、烧录、清理功能按钮
+  - 旧版本工程缓存重建，以匹配新版本
+  - 导入工程时自动生成 .gitignore 文件，排除无用/编译文件
+
+**修复**:
+  - C/C++ IntelliSense 无法对独有字段（IO 寄存器、类型声明等）分析
+
+**优化**:
+  - 编译与清理功能切换至 Pseudoterminal 终端执行，弃用批处理脚本
+
+**移除**:
+  - 插件自带工具链
+  - vscode 插件设置页面无用配置项
+  - 工程树中项目节点右侧的编译图标
+
+***
+
 ### [v0.0.5]
 
 **新增**:
@@ -16,7 +38,7 @@ All notable version changes will be recorded in this file.
 
 **优化**:
   - 编译和清理脚本在执行完毕后自动删除，不再占用磁盘空间
-  - 插件在vscode启动完成后会自动启用
+  - 插件在 vscode 启动完成后会自动启用
 
 ***
 

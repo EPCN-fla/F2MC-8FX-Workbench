@@ -44,6 +44,7 @@ export async function parsePrjProject(prjPath: string, isActive = false): Promis
 		: undefined;
 	const cpuName = activeConfiguration ? readCpuName(content, activeConfiguration) : undefined;
 	const loadModule = activeConfiguration ? readLoadModule(content, activeConfiguration, projectRootPath) : undefined;
+	const memberDependencies = activeConfiguration ? readMemberDependencies(content, activeConfiguration, projectRootPath) : undefined;
 
 	return {
 		name: path.basename(prjPath, path.extname(prjPath)),
@@ -57,6 +58,7 @@ export async function parsePrjProject(prjPath: string, isActive = false): Promis
 		sourceFiles: collectFilesByTypeInFolder(members, 'Source Files', 'c'),
 		assemblerFiles: collectFilesByTypeInFolder(members, 'Source Files', 'a'),
 		libraryFiles: collectFilesByType(members, 'l'),
+		memberDependencies,
 		cpuName,
 		loadModule
 	};
@@ -131,6 +133,50 @@ function readLoadModule(content: string, activeConfiguration: string, projectRoo
 		}
 	}
 	return undefined;
+}
+
+function readMemberDependencies(content: string, activeConfiguration: string, projectRootPath: string): Record<string, string[]> | undefined {
+	const memberLines = mergeContinuationLines(readIniSection(content, `MEMBER-${activeConfiguration}`));
+	const filesByKey = new Map<string, string>();
+	const depsByKey = new Map<string, string[]>();
+
+	for (const rawLine of memberLines) {
+		const line = rawLine.trim();
+		const fileMatch = /^F(\d+)\s*=\s*\d+\s+([A-Za-z])\s+(?:\d+\s+)?(.+)$/i.exec(line);
+		if (fileMatch) {
+			filesByKey.set(fileMatch[1], resolvePath(fileMatch[3].trim(), projectRootPath));
+			continue;
+		}
+		const depMatch = /^F(\d+)-\d+\s*=\s*-\s*(.+)$/i.exec(line);
+		if (depMatch) {
+			const list = depsByKey.get(depMatch[1]) ?? [];
+			list.push(resolvePath(depMatch[2].trim(), projectRootPath));
+			depsByKey.set(depMatch[1], list);
+		}
+	}
+
+	if (filesByKey.size === 0) {
+		return undefined;
+	}
+
+	const result: Record<string, string[]> = {};
+	for (const [key, filePath] of filesByKey) {
+		result[path.normalize(filePath).toLowerCase()] = depsByKey.get(key) ?? [];
+	}
+	return result;
+}
+
+function mergeContinuationLines(lines: string[]): string[] {
+	const merged: string[] = [];
+	for (const line of lines) {
+		const previous = merged[merged.length - 1];
+		if (previous !== undefined && /\\$/.test(previous) && !/^F\d+(-\d+)?\s*=/i.test(line)) {
+			merged[merged.length - 1] = previous + line;
+			continue;
+		}
+		merged.push(line);
+	}
+	return merged;
 }
 
 function parseMemberSection(lines: string[], projectRootPath: string): F2mcProjectMember[] {

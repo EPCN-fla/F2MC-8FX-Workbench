@@ -21,8 +21,8 @@
 
 ## 🗒️ 开发进度
 
-- [x] 实现SOFTUNE工作区和项目文件解析
-- [x] 利用SOFTUNE工具链，实现项目编译功能
+- [x] 实现 SOFTUNE 工作区和项目文件解析
+- [x] 利用 SOFTUNE 工具链，实现项目编译功能
 - [x] 支持增减项目文件，创建虚拟文件夹等
 - [x] 支持项目自定义设置
 - [x] 支持构建器参数修改
@@ -63,3 +63,7 @@
    vsce package --yarn
    ```
    完成打包
+
+## ⚖️ 许可证
+
+[GPL-3.0 license](https://github.com/EPCN-fla/F2MC-8FX-Workbench/blob/main/LICENSE)

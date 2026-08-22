@@ -15,7 +15,7 @@ const ROM_AREA_COLUMN_INDEX = 39;
 const RAM_AREA_COLUMN_INDEX = 40;
 
 export async function loadChipCatalog(extensionPath: string): Promise<F2mcChipInfo[]> {
-	const csvPath = path.join(extensionPath, 'res', 'compiler', 'Lib', '896', '896.csv');
+	const csvPath = path.join(extensionPath, 'res', '896.csv');
 	const content = await readTextFile(csvPath);
 	return content
 		.split(/\r?\n/)

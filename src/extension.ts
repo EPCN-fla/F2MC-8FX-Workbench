@@ -10,10 +10,11 @@ import type { F2mcChipInfo } from './chipCatalog';
 import { PROJECT_CONTEXT } from './constants';
 import { registerCppConfigurationProvider } from './cppConfigurationProvider';
 import { parsePrjProject, parseWspProject } from './projectParser';
-import { createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
+import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
 import { saveProjectFiles } from './projectWriter';
 import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './settingsTree';
+import { pickAndSetupToolchain } from './toolchainInstaller';
 import { toWorkspaceRelativePath } from './pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
@@ -31,6 +32,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
 
 	const outputChannel = vscode.window.createOutputChannel('F2MC-8FX Build');
+	const statusBarItems = [
+		createStatusBarItem('f2mc_workbench.project.build', '$(tools)', '编译', '编译工程', 10),
+		createStatusBarItem('f2mc_workbench.project.download', '$(arrow-circle-down)', '烧录', '烧录目标文件', 9),
+		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', 8)
+	];
+	context.subscriptions.push(...statusBarItems);
 	const chips = await loadChipCatalog(context.extensionPath);
 	settingsTreeProvider.setChips(chips);
 	context.subscriptions.push(treeView, settingsTreeView, outputChannel);
@@ -49,6 +56,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		treeProvider.setProject(config);
 		settingsTreeProvider.setProject(config);
 		await vscode.commands.executeCommand('setContext', PROJECT_CONTEXT, Boolean(config));
+		for (const item of statusBarItems) {
+			if (config) {
+				item.show();
+			} else {
+				item.hide();
+			}
+		}
 
 		if (showMessage) {
 			if (config) {
@@ -83,6 +97,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('f2mc_workbench.settings.openBuilderOptions', async () => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
 			await BuilderOptionsWebview.open(context, config);
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.settings.installToolchain', async () => {
+			await pickAndSetupToolchain();
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.importWsp', async () => {
 			await importWspProject(outputChannel);
@@ -162,6 +179,14 @@ export function deactivate(): void {
 	// No-op.
 }
 
+function createStatusBarItem(command: string, icon: string, text: string, tooltip: string, priority: number): vscode.StatusBarItem {
+	const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, priority);
+	item.text = `${icon} ${text}`;
+	item.command = command;
+	item.tooltip = tooltip;
+	return item;
+}
+
 async function importWspProject(outputChannel: vscode.OutputChannel): Promise<void> {
 	const selected = await vscode.window.showOpenDialog({
 		canSelectFiles: true,
@@ -183,6 +208,7 @@ async function importWspProject(outputChannel: vscode.OutputChannel): Promise<vo
 	const config = await parseWspProject(wspPath);
 	await persistProjectConfig(config);
 	const workspaceFile = await createVsCodeWorkspace(config);
+	const gitignoreFile = await createProjectGitignore(config);
 
 	const openAction = '打开工作区';
 	const laterAction = '稍后';
@@ -194,6 +220,7 @@ async function importWspProject(outputChannel: vscode.OutputChannel): Promise<vo
 
 	outputChannel.appendLine(`[import] .wsp: ${wspPath}`);
 	outputChannel.appendLine(`[import] workspace: ${workspaceFile}`);
+	outputChannel.appendLine(`[import] gitignore: ${gitignoreFile}`);
 
 	if (choice === openAction) {
 		await vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(workspaceFile), false);

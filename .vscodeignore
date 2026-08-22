@@ -12,3 +12,9 @@ src
 **/.vscode-test.*
 **/test/**
 **/yarn.lock
+
+docs
+toolchain
+res/V30L14
+res/V30L15
+*.vsix
