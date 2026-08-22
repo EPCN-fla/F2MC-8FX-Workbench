@@ -3,6 +3,7 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
+import { resolveCompilerIncludeDirectory } from './toolchain';
 import type { F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 const BUILTIN_DEFINES: string[] = [
@@ -115,11 +116,11 @@ class F2mcCppConfigurationProvider implements CustomConfigurationProvider {
 		}
 
 		const tpiPaths = await this.readTpiIncludePaths(project);
-		const standardLibPath = this.getStandardLibPath();
+		const standardLibPaths = this.getStandardLibPaths();
 		const cpuDefine = this.getCpuDefine(project);
 
 		const configuration: SourceFileConfiguration = {
-			includePath: [...tpiPaths, standardLibPath],
+			includePath: [...tpiPaths, ...standardLibPaths],
 			defines: [...(cpuDefine ? [cpuDefine] : []), ...BUILTIN_DEFINES],
 			standard: 'c99',
 			intelliSenseMode: 'gcc-x86',
@@ -142,14 +143,14 @@ class F2mcCppConfigurationProvider implements CustomConfigurationProvider {
 		const config = this.getConfig();
 		const project = config ? this.getActiveProject(config) : undefined;
 		const includePaths: string[] = [];
-		const standardLibPath = this.getStandardLibPath();
+		const standardLibPaths = this.getStandardLibPaths();
 
 		if (project) {
 			includePaths.push(...(await this.readTpiIncludePaths(project)));
 		}
 
 		return {
-			browsePath: [...includePaths, standardLibPath],
+			browsePath: [...includePaths, ...standardLibPaths],
 			standard: 'c99',
 			compilerPath: ''
 		};
@@ -167,8 +168,9 @@ class F2mcCppConfigurationProvider implements CustomConfigurationProvider {
 		return config.projects.find(project => project.isActive) ?? config.projects[0];
 	}
 
-	private getStandardLibPath(): string {
-		return path.join(this.context.extensionPath, 'res', 'compiler', 'Lib', '896', 'INCLUDE');
+	private getStandardLibPaths(): string[] {
+		const includeDirectory = resolveCompilerIncludeDirectory(this.context.extensionPath);
+		return includeDirectory ? [includeDirectory] : [];
 	}
 
 	private getCpuDefine(project: F2mcProjectInfo): string | undefined {

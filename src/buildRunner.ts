@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 
 import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
 import { quoteShell, resolvePath } from './pathUtils';
+import { COMPILER_TOOLS, findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 interface CommandSpec {
@@ -43,16 +44,6 @@ const TASK_TITLES: Record<BuildKind, string> = {
 	download: 'F2MC-8FX Download'
 };
 
-const COMPILER_TOOLS = [
-	{ file: 'fcc896s.exe' },
-	{ file: 'FASM896S.EXE' },
-	{ file: 'FLNK896S.EXE' },
-	{ file: 'F2MS.EXE' },
-	{ file: 'F2IS.EXE' },
-	{ file: 'F2ES.EXE' },
-	{ file: 'F2HS.EXE' }
-] as const;
-
 let sharedTerminal: vscode.Terminal | undefined;
 
 export async function runProjectTask(
@@ -63,7 +54,7 @@ export async function runProjectTask(
 ): Promise<void> {
 	const command = await resolveBuildCommand(config, kind, extensionPath);
 	if (!command) {
-		void vscode.window.showWarningMessage('未找到可执行的编译命令，请检查工程配置和 res/compiler。');
+		void vscode.window.showWarningMessage('未找到可执行的编译命令，请检查工程配置和编译器路径（f2mc-8fx-workbench.compilerPath）。');
 		return;
 	}
 
@@ -103,7 +94,19 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 		return undefined;
 	}
 
-	const layout = createBuildLayout(project, extensionPath);
+	const compilerDirectory = resolveCompilerDirectory(extensionPath);
+	if (!compilerDirectory) {
+		void vscode.window.showWarningMessage('未找到编译器。请在设置中配置 f2mc-8fx-workbench.compilerPath 指向 SOFTUNE 编译器目录（Bin 目录或其上一级）。');
+		return undefined;
+	}
+
+	const missingTools = findMissingCompilerTools(compilerDirectory);
+	if (missingTools.length > 0) {
+		void vscode.window.showWarningMessage(`编译器目录缺少工具: ${missingTools.join(', ')}（${compilerDirectory}）`);
+		return undefined;
+	}
+
+	const layout = createBuildLayout(project, compilerDirectory);
 	if (!layout) {
 		return undefined;
 	}
@@ -124,7 +127,7 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 	};
 }
 
-function createBuildLayout(project: F2mcProjectInfo, extensionPath: string): BuildLayout | undefined {
+function createBuildLayout(project: F2mcProjectInfo, compilerDirectory: string): BuildLayout | undefined {
 	if (!project.path || !project.optionFile || !project.activeConfiguration || !project.directories?.config || !project.directories.obj || !project.directories.lst || !project.directories.opt) {
 		return undefined;
 	}
@@ -146,7 +149,7 @@ function createBuildLayout(project: F2mcProjectInfo, extensionPath: string): Bui
 	return {
 		project,
 		projectRootPath,
-		compilerDirectory: path.join(extensionPath, 'res', 'compiler', 'Bin'),
+		compilerDirectory,
 		configDirectory: project.directories.config,
 		objDirectory: project.directories.obj,
 		lstDirectory: project.directories.lst,
@@ -337,8 +340,8 @@ function createBuildScript(layout: BuildLayout): string {
 		`set "OPT_DIR=${layout.optDirectory}"`,
 		'',
 		...COMPILER_TOOLS.flatMap(tool => [
-			`if not exist "%COMPILER_DIR%\\${tool.file}" (`,
-			`    echo Error: ${tool.file} not found in %COMPILER_DIR%`,
+			`if not exist "%COMPILER_DIR%\\${tool}" (`,
+			`    echo Error: ${tool} not found in %COMPILER_DIR%`,
 			'    exit /b 1',
 			')'
 		]),

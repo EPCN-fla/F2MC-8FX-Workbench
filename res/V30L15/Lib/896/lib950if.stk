@@ -1,0 +1,4 @@
+@lib950if.lib
+0	L	__abort
+0	L	__exit
+12+	L	_sbrk

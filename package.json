@@ -130,6 +130,12 @@
           "default": "",
           "description": "当前工程的 .wsp 文件路径；导入工程时会自动写入工作区设置。"
         },
+        "f2mc-8fx-workbench.compilerPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "SOFTUNE 编译器目录（Bin 目录或其上一级根目录，如 `C:\\SOFTUNE\\V30L15`）。扩展不再内置编译器，必须配置此项后才能编译。支持 `${workspaceFolder}` 变量。"
+        },
         "f2mc-8fx-workbench.buildWorkingDirectory": {
           "type": "string",
           "default": ".",
