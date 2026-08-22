@@ -4,13 +4,14 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
-import { quoteShell, resolvePath } from './pathUtils';
+import { resolvePath } from './pathUtils';
 import { COMPILER_TOOLS, findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 interface CommandSpec {
 	commandLine: string;
 	cwd: string;
+	compilerDirectory?: string;
 }
 
 interface BuildLayout {
