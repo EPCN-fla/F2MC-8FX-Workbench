@@ -32,11 +32,6 @@ export async function createVsCodeWorkspace(config: F2mcProjectConfig): Promise<
 				path: '.'
 			}
 		],
-		settings: {
-			'f2mc-8fx-workbench.wspPath': path.basename(config.wspPath),
-			'f2mc-8fx-workbench.buildWorkingDirectory': '.',
-			'f2mc-8fx-workbench.buildCommandTemplate': ''
-		},
 		extensions: {
 			recommendations: [EXTENSION_ID]
 		}
