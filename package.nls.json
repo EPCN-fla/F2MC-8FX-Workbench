@@ -3,7 +3,7 @@
 	"f2mc_workbench.project.refresh": "刷新",
 	"f2mc_workbench.project.build": "编译",
 	"f2mc_workbench.project.clean": "清理",
-	"f2mc_workbench.project.download": "下载",
+	"f2mc_workbench.project.download": "烧录",
 	"f2mc_workbench.project.save_all": "全部保存",
 	"f2mc_workbench.project.addProject": "添加项目",
 	"f2mc_workbench.project.setActive": "设为活动",
