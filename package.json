@@ -235,12 +235,6 @@
         {
           "view": "fh.view",
           "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
-          "command": "f2mc_workbench.project.build",
-          "group": "inline@010"
-        },
-        {
-          "view": "fh.view",
-          "when": "viewItem == f2mc.project || viewItem == f2mc.project.active",
           "command": "f2mc_workbench.project.addFile",
           "group": "inline@020"
         },

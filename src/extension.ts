@@ -32,6 +32,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
 
 	const outputChannel = vscode.window.createOutputChannel('F2MC-8FX Build');
+	const statusBarItems = [
+		createStatusBarItem('f2mc_workbench.project.build', '$(tools)', '编译', '编译工程', 10),
+		createStatusBarItem('f2mc_workbench.project.download', '$(arrow-circle-down)', '烧录', '烧录目标文件', 9),
+		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', 8)
+	];
+	context.subscriptions.push(...statusBarItems);
 	const chips = await loadChipCatalog(context.extensionPath);
 	settingsTreeProvider.setChips(chips);
 	context.subscriptions.push(treeView, settingsTreeView, outputChannel);
@@ -50,6 +56,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		treeProvider.setProject(config);
 		settingsTreeProvider.setProject(config);
 		await vscode.commands.executeCommand('setContext', PROJECT_CONTEXT, Boolean(config));
+		for (const item of statusBarItems) {
+			if (config) {
+				item.show();
+			} else {
+				item.hide();
+			}
+		}
 
 		if (showMessage) {
 			if (config) {
@@ -164,6 +177,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
 export function deactivate(): void {
 	// No-op.
+}
+
+function createStatusBarItem(command: string, icon: string, text: string, tooltip: string, priority: number): vscode.StatusBarItem {
+	const item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, priority);
+	item.text = `${icon} ${text}`;
+	item.command = command;
+	item.tooltip = tooltip;
+	return item;
 }
 
 async function importWspProject(outputChannel: vscode.OutputChannel): Promise<void> {
