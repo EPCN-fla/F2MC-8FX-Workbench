@@ -3,7 +3,8 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { CONFIG_FILE_NAME, EXTENSION_ID, HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from './constants';
-import { readTextFile, writeJsonFile } from './fileSystem';
+import { readTextFile, writeJsonFile, getSystemAnsiEncodingLabel } from './fileSystem';
+import { parsePrjProject } from './projectParser';
 import type { F2mcProjectConfig } from './types';
 
 export async function discoverProjectConfig(): Promise<F2mcProjectConfig | undefined> {
@@ -26,12 +27,18 @@ export async function persistProjectConfig(config: F2mcProjectConfig): Promise<v
 
 export async function createVsCodeWorkspace(config: F2mcProjectConfig): Promise<string> {
 	const workspaceFile = path.join(config.rootPath, `${path.basename(config.wspPath, path.extname(config.wspPath))}.code-workspace`);
+	const ansiEncoding = await getSystemAnsiEncodingLabel();
 	const workspaceContent = {
 		folders: [
 			{
 				path: '.'
 			}
 		],
+		settings: ansiEncoding
+			? {
+				'files.encoding': ansiEncoding
+			}
+			: undefined,
 		extensions: {
 			recommendations: [EXTENSION_ID]
 		}
@@ -41,11 +48,27 @@ export async function createVsCodeWorkspace(config: F2mcProjectConfig): Promise<
 	return workspaceFile;
 }
 
+async function refreshStaleProjectFields(config: F2mcProjectConfig): Promise<void> {
+	for (const project of config.projects ?? []) {
+		if (project.memberDependencies !== undefined || !project.path || !/\.prj$/i.test(project.path)) {
+			continue;
+		}
+		try {
+			const refreshed = await parsePrjProject(project.path, project.isActive);
+			project.memberDependencies = refreshed.memberDependencies ?? {};
+		} catch {
+			// Project file may be missing; record an empty map so we do not retry on every discovery.
+			project.memberDependencies = {};
+		}
+	}
+}
+
 async function readProjectConfig(configPath: string): Promise<F2mcProjectConfig | undefined> {
 	try {
 		const content = await readTextFile(configPath);
 		const parsed = JSON.parse(content) as F2mcProjectConfig;
 		if (parsed.wspPath && parsed.rootPath) {
+			await refreshStaleProjectFields(parsed);
 			return parsed;
 		}
 	} catch {

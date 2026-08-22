@@ -21,6 +21,7 @@ export interface F2mcProjectInfo {
 	sourceFiles: string[];
 	assemblerFiles: string[];
 	libraryFiles: string[];
+	memberDependencies?: Record<string, string[]>;
 	cpuName?: string;
 	loadModule?: string;
 }
