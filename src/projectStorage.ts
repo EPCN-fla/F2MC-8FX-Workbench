@@ -4,20 +4,84 @@ import * as vscode from 'vscode';
 
 import { CONFIG_FILE_NAME, EXTENSION_ID, HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from './constants';
 import { readTextFile, writeJsonFile, getSystemAnsiEncodingLabel } from './fileSystem';
-import { parsePrjProject } from './projectParser';
+import { parsePrjProject, parseWspProject } from './projectParser';
 import type { F2mcProjectConfig } from './types';
+
+const LEGACY_CONFIG_FILE_NAMES = [CONFIG_FILE_NAME, 'f2mc_workbench.json'];
 
 export async function discoverProjectConfig(): Promise<F2mcProjectConfig | undefined> {
 	const folders = vscode.workspace.workspaceFolders ?? [];
 	for (const folder of folders) {
-		const config = await readProjectConfig(path.join(folder.uri.fsPath, HELPER_DIR_NAME, CONFIG_FILE_NAME))
-			?? await readProjectConfig(path.join(folder.uri.fsPath, LEGACY_HELPER_DIR_NAME, CONFIG_FILE_NAME));
+		const folderPath = folder.uri.fsPath;
+		const legacyDir = path.join(folderPath, LEGACY_HELPER_DIR_NAME);
+		if (await pathExists(legacyDir)) {
+			const rebuilt = await rebuildFromLegacyHelper(folderPath, legacyDir);
+			if (rebuilt) {
+				return rebuilt;
+			}
+			// Rebuild failed (e.g. .wsp missing); fall back to the legacy persisted config.
+			for (const fileName of LEGACY_CONFIG_FILE_NAMES) {
+				const legacyConfig = await readProjectConfig(path.join(legacyDir, fileName));
+				if (legacyConfig) {
+					return legacyConfig;
+				}
+			}
+		}
+		const config = await readProjectConfig(path.join(folderPath, HELPER_DIR_NAME, CONFIG_FILE_NAME));
 		if (config) {
 			return config;
 		}
 	}
 
 	return undefined;
+}
+
+async function rebuildFromLegacyHelper(folderPath: string, legacyDir: string): Promise<F2mcProjectConfig | undefined> {
+	const wspPath = await findLegacyWspPath(folderPath, legacyDir);
+	if (!wspPath) {
+		return undefined;
+	}
+
+	let config: F2mcProjectConfig;
+	try {
+		config = await parseWspProject(wspPath);
+	} catch {
+		return undefined;
+	}
+
+	try {
+		await persistProjectConfig(config);
+		await vscode.workspace.fs.delete(vscode.Uri.file(legacyDir), { recursive: true, useTrash: false });
+	} catch {
+		// Cleanup failure is non-fatal; the rebuilt config is still usable.
+	}
+	return config;
+}
+
+async function findLegacyWspPath(folderPath: string, legacyDir: string): Promise<string | undefined> {
+	for (const fileName of LEGACY_CONFIG_FILE_NAMES) {
+		try {
+			const content = await readTextFile(path.join(legacyDir, fileName));
+			const parsed = JSON.parse(content) as Partial<F2mcProjectConfig>;
+			if (parsed.wspPath) {
+				return parsed.wspPath;
+			}
+		} catch {
+			// Try the next candidate file.
+		}
+	}
+
+	const matches = await vscode.workspace.findFiles(new vscode.RelativePattern(folderPath, '*.wsp'), undefined, 1);
+	return matches[0]?.fsPath;
+}
+
+async function pathExists(targetPath: string): Promise<boolean> {
+	try {
+		await vscode.workspace.fs.stat(vscode.Uri.file(targetPath));
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 export async function persistProjectConfig(config: F2mcProjectConfig): Promise<void> {
