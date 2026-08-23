@@ -20,7 +20,7 @@ const TOOLCHAIN_PACKAGES: ToolchainPackage[] = [
 	{
 		version: 'V30L14',
 		packageUrl: 'https://raw.githubusercontent.com/EPCN-fla/F2MC-8FX-Workbench/main/toolchain/V30L14.tar.gz',
-		sha256: '3d354526838a5d9ef4ef01eccfaf54c391a94eeaebdfc12f6a8063c23e589cc65'
+		sha256: '3d354526838a5d9ef4ef01eccfaf54c391a94eaebdfc12f6a8063c23e589cc65'
 	},
 	{
 		version: 'V30L15',

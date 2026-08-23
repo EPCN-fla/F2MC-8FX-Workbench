@@ -6,6 +6,13 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.1.1]
+
+**修复**:
+  - 修正 V30L14 资源 SHA-256 校验值
+
+***
+
 ### [v0.1.0]
 
 **新增**:
