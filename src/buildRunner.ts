@@ -196,7 +196,7 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 	}
 
 	return {
-		cwd: layout.projectRootPath,
+		cwd: layout.lstDirectory,
 		compilerDirectory,
 		commandLines: kind === 'clean' ? [createCleanCommand(layout)] : createBuildCommandLines(layout)
 	};
@@ -361,7 +361,7 @@ function createAssemblerOptions(layout: BuildLayout, options: DatOptions): strin
 
 function createLinkerOptions(layout: BuildLayout, options: DatOptions): string {
 	return normalizeOptionLines([
-		...removeDuplicateOptions(options.linker, ['-Xdof', '-m']),
+		...removeDuplicateOptions(options.linker, ['-Xdof']).filter(line => { const lower = line.toLowerCase(); return lower !== '-m' && !lower.startsWith('-m '); }),
 		`-m ${quoteOptionPath(layout.mapFilePath)}`,
 		`-alin ${quoteOptionPath(layout.lstDirectory)}`,
 		`-alout ${quoteOptionPath(layout.lstDirectory)}`,
