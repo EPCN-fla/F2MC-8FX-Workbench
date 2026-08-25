@@ -6,6 +6,13 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.1.2]
+
+**修复**:
+  - .lst 输出到 LST 目录 & 链接选项去重保留 -mmi
+
+***
+
 ### [v0.1.1]
 
 **修复**:
