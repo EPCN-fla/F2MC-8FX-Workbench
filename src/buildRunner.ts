@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
+import { runFlashDownload } from './flasher/flasherService';
 import { findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
@@ -14,7 +15,7 @@ interface CommandSpec {
 	compilerDirectory?: string;
 }
 
-interface BuildLayout {
+export interface BuildLayout {
 	project: F2mcProjectInfo;
 	projectRootPath: string;
 	objDirectory: string;
@@ -55,6 +56,13 @@ export async function runProjectTask(
 	outputChannel: vscode.OutputChannel,
 	extensionPath: string
 ): Promise<void> {
+	if (kind === 'download') {
+		const project = getActiveProject(config);
+		const layout = project ? createBuildLayout(project) : undefined;
+		await runFlashDownload(layout, outputChannel);
+		return;
+	}
+
 	const command = await createBuiltInCommand(config, kind, extensionPath);
 	if (!command) {
 		void vscode.window.showWarningMessage('未找到可执行的编译命令，请检查工程配置和编译器路径（f2mc-8fx-workbench.compilerPath）。');
@@ -162,11 +170,6 @@ async function createBuiltInCommand(config: F2mcProjectConfig, kind: BuildKind, 
 		return undefined;
 	}
 
-	if (kind === 'download') {
-		void vscode.window.showWarningMessage('下载功能暂不支持');
-		return undefined;
-	}
-
 	const compilerDirectory = resolveCompilerDirectory(extensionPath);
 	if (!compilerDirectory) {
 		void vscode.window.showWarningMessage('未找到编译器。请在设置中配置 f2mc-8fx-workbench.compilerPath 指向 SOFTUNE 编译器目录（Bin 目录或其上一级）。');
@@ -234,7 +237,7 @@ async function ensureBuildDirectories(layout: BuildLayout): Promise<void> {
 	]);
 }
 
-function createBuildLayout(project: F2mcProjectInfo): BuildLayout | undefined {
+export function createBuildLayout(project: F2mcProjectInfo): BuildLayout | undefined {
 	if (!project.path || !project.optionFile || !project.activeConfiguration || !project.directories?.config || !project.directories.obj || !project.directories.lst || !project.directories.opt) {
 		return undefined;
 	}
@@ -516,6 +519,6 @@ function createCleanDirectoryCommands(directoryPath: string, patterns: string[])
 	return patterns.map(pattern => `del /q "${path.join(directoryPath, pattern)}" 2>nul`);
 }
 
-function getActiveProject(config: F2mcProjectConfig): F2mcProjectInfo | undefined {
+export function getActiveProject(config: F2mcProjectConfig): F2mcProjectInfo | undefined {
 	return config.projects.find(project => project.isActive) ?? config.projects[0];
 }

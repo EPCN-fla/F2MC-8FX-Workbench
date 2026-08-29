@@ -18,3 +18,6 @@ toolchain
 res/V30L14
 res/V30L15
 *.vsix
+diagnose-flash.cjs
+ab-load-python.py
+test-set-pulse.ps1
