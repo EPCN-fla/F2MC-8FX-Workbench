@@ -12,6 +12,7 @@ src
 **/.vscode-test.*
 **/test/**
 **/yarn.lock
+**/package-lock.json
 
 docs
 toolchain
