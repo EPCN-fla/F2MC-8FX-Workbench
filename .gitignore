@@ -3,8 +3,3 @@ dist
 node_modules
 
 *.vsix
-
-# 本地烧录调试脚本（保留在本地，不入库；.vscodeignore 中已排除出 VSIX）
-diagnose-flash.cjs
-probe-node.cjs
-ab-load-python.py
