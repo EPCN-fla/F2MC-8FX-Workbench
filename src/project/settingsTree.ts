@@ -320,7 +320,7 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 				}),
 				programmerNode({
 					label: '复位运行',
-					icon: new vscode.ThemeIcon('debug-restart'),
+					icon: new vscode.ThemeIcon('refresh'),
 					programmerKey: 'reset',
 					description: resetOn ? '开启' : '关闭',
 					tooltip: `复位运行: ${resetOn ? '开启' : '关闭'}（烧录完成后断电重新上电运行；关闭则保持编程模式）`,
