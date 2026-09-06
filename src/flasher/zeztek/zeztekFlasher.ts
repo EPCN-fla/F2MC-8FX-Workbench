@@ -1,4 +1,4 @@
-// 泽兆烧录器一键烧录：解析工程产物 → 选串口 → 上传 → 一键擦除+编程+校验。
+// 泽兆烧录器一键烧录：解析工程产物 → 自动检测串口 → 上传 → 一键擦除+编程+校验。
 // 使用约束：目标板必须断电（由烧录器盒子控制上电）；烧录过程不可中断。
 
 import * as fs from 'node:fs';
@@ -11,8 +11,8 @@ import type { BuildLayout } from '../../build/buildRunner';
 import { BUILTIN_MCUS, blockAddrs, findMcuByCpuName, totalKb } from './mcuTable';
 import { Mode, Power, PROGRAMMER_BAUD, ProtocolError, ZeztekProgrammer, dataBlock, type ByteStream } from './protocol';
 import { buildImage, imageChecksum, parseS19, validateRange } from './srecord';
-
-const CONFIG_SECTION = 'f2mc-8fx-workbench';
+import { selectZeztekPorts } from './zeztekPort';
+import { getProgrammerSettings } from '../../common/programmerSettings';
 
 // 串口流要求：DTR 全程保持低电平（持续拉高时烧录器完全无应答；RTS 由绑定默认禁用，无影响）。
 // serialport 绑定默认 hupcl=true，会在打开时拉高 DTR——必须显式传 hupcl:false 覆盖。
@@ -119,8 +119,6 @@ async function setupProgrammer(
 }
 
 async function resolveProgrammerPort(outputChannel: vscode.OutputChannel): Promise<string | undefined> {
-	const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION);
-	const saved = (configuration.get<string>('programmerPort') ?? '').trim();
 	let ports;
 	try {
 		ports = await SerialPort.list();
@@ -130,29 +128,27 @@ async function resolveProgrammerPort(outputChannel: vscode.OutputChannel): Promi
 		return undefined;
 	}
 
-	const normalize = (value: string): string => value.toUpperCase();
-	if (saved && ports.some(info => normalize(info.path) === normalize(saved))) {
-		outputChannel.appendLine(`[flash] 使用已配置串口: ${saved}`);
-		return saved;
+	const candidates = selectZeztekPorts(ports);
+	if (candidates.length === 1) {
+		outputChannel.appendLine(`[flash] 自动检测到烧录器串口: ${candidates[0].path}`);
+		return candidates[0].path;
 	}
 
-	if (ports.length === 0) {
-		void vscode.window.showWarningMessage('未发现串口设备，请确认烧录器已通过 USB 连接并安装驱动（CP210x）。');
+	if (candidates.length === 0) {
+		void vscode.window.showWarningMessage('未发现泽兆烧录器（CP210x USB 串口），请确认烧录器已通过 USB 连接并安装驱动。');
 		return undefined;
 	}
 
-	const picked = await vscode.window.showQuickPick(ports.map(info => ({
+	const picked = await vscode.window.showQuickPick(candidates.map(info => ({
 		label: info.path,
 		description: info.manufacturer ?? undefined
 	})), {
-		title: '选择烧录器串口',
-		placeHolder: saved || '泽兆烧录器使用 CP210x USB 串口（如 COM8）'
+		title: '检测到多个泽兆烧录器，请选择'
 	});
 	if (!picked) {
 		return undefined;
 	}
-	await configuration.update('programmerPort', picked.label, vscode.ConfigurationTarget.Global);
-	outputChannel.appendLine(`[flash] 已记住烧录器串口: ${picked.label}（可在设置 f2mc-8fx-workbench.programmerPort 修改）`);
+	outputChannel.appendLine(`[flash] 使用烧录器串口: ${picked.label}`);
 	return picked.label;
 }
 
@@ -178,11 +174,9 @@ export async function runZeztekDownload(layout: BuildLayout | undefined, outputC
 		return;
 	}
 
-	const configuration = vscode.workspace.getConfiguration(CONFIG_SECTION);
-	const modeSetting = configuration.get<'online' | 'offline'>('programmerMode') ?? 'offline';
-	const powerSetting = configuration.get<'5V' | '3.3V'>('programmerPower') ?? '5V';
-	const mode = modeSetting === 'online' ? Mode.ONLINE : Mode.OFFLINE;
-	const power = powerSetting === '3.3V' ? Power.V3_3 : Power.V5;
+	const settings = getProgrammerSettings();
+	const mode = settings.programmerMode === 'online' ? Mode.ONLINE : Mode.OFFLINE;
+	const power = settings.programmerPower === '3.3V' ? Power.V3_3 : Power.V5;
 
 	const log = (message: string): void => {
 		outputChannel.appendLine(`[flash] ${message}`);
