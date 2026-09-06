@@ -40,6 +40,30 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', 8)
 	];
 	context.subscriptions.push(...statusBarItems);
+
+	// 状态栏执行动画：命令运行期间图标旋转，结束后恢复原图标
+	const statusBarIdleText = new Map<string, string>();
+	for (const item of statusBarItems) {
+		const command = item.command;
+		if (typeof command === 'string') {
+			statusBarIdleText.set(command, item.text);
+		}
+	}
+	async function withStatusBarSpin(command: string, run: () => Promise<void>): Promise<void> {
+		const item = statusBarItems.find(entry => entry.command === command);
+		const idleText = statusBarIdleText.get(command);
+		if (!item || idleText === undefined) {
+			await run();
+			return;
+		}
+		const label = idleText.replace(/^\S+\s+/, '');
+		item.text = `$(sync~spin) ${label}`;
+		try {
+			await run();
+		} finally {
+			item.text = idleText;
+		}
+	}
 	const chips = await loadChipCatalog(context.extensionPath);
 	settingsTreeProvider.setChips(chips);
 	context.subscriptions.push(treeView, settingsTreeView, outputChannel);
@@ -122,7 +146,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			await loadCurrentProject(true);
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.build', async (node?: F2mcProjectNode) => {
-			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'build', node);
+			await withStatusBarSpin('f2mc_workbench.project.build', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'build', node));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.addFile', async (node?: F2mcProjectNode) => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
@@ -145,10 +169,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			}
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.clean', async (node?: F2mcProjectNode) => {
-			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'clean', node);
+			await withStatusBarSpin('f2mc_workbench.project.clean', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'clean', node));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.download', async () => {
-			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'download');
+			await withStatusBarSpin('f2mc_workbench.project.download', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'download'));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.addProject', async (node?: F2mcProjectNode) => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
