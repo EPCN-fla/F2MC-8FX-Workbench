@@ -7,7 +7,7 @@ import { describe, it } from 'node:test';
 import {
 	Cmd, FrameReader, Mode, Power, ProtocolError, Status, ZeztekProgrammer,
 	buildDataHdrFrame, buildReadFrame, buildSetFrame, cmdFrame, dataBlock, type ByteStream
-} from '../../flasher/protocol';
+} from '../../../flasher/zeztek/protocol';
 
 describe('protocol frames', () => {
 	it('SET 在线/5V/不限次数', () => {

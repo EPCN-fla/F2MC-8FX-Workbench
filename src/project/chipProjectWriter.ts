@@ -1,8 +1,8 @@
 import * as path from 'node:path';
 
-import { ensureFinalNewline, readTextFile, writeTextFile } from './fileSystem';
+import { ensureFinalNewline, readTextFile, writeTextFile } from '../common/fileSystem';
 import type { F2mcChipInfo } from './chipCatalog';
-import type { F2mcProjectInfo } from './types';
+import type { F2mcProjectInfo } from '../types';
 
 export async function applyChipToProjectFiles(project: F2mcProjectInfo, chip: F2mcChipInfo): Promise<void> {
 	project.cpuName = chip.model;

@@ -2,20 +2,20 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { BuilderOptionsWebview } from './builderOptionsWebview';
-import { runProjectTask } from './buildRunner';
-import { applyChipToProjectFiles } from './chipProjectWriter';
-import { findChipByModel, getChipCategories, loadChipCatalog } from './chipCatalog';
-import type { F2mcChipInfo } from './chipCatalog';
+import { BuilderOptionsWebview } from './build/builderOptionsWebview';
+import { runProjectTask } from './build/buildRunner';
+import { applyChipToProjectFiles } from './project/chipProjectWriter';
+import { findChipByModel, getChipCategories, loadChipCatalog } from './project/chipCatalog';
+import type { F2mcChipInfo } from './project/chipCatalog';
 import { PROJECT_CONTEXT } from './constants';
-import { registerCppConfigurationProvider } from './cppConfigurationProvider';
-import { parsePrjProject, parseWspProject } from './projectParser';
-import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
-import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
-import { saveProjectFiles } from './projectWriter';
-import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './settingsTree';
-import { pickAndSetupToolchain } from './toolchainInstaller';
-import { toWorkspaceRelativePath } from './pathUtils';
+import { registerCppConfigurationProvider } from './intellisense/cppConfigurationProvider';
+import { parsePrjProject, parseWspProject } from './project/projectParser';
+import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './project/projectStorage';
+import { F2mcProjectNode, F2mcProjectTreeProvider } from './project/projectTree';
+import { saveProjectFiles } from './project/projectWriter';
+import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './project/settingsTree';
+import { pickAndSetupToolchain } from './toolchain/toolchainInstaller';
+import { toWorkspaceRelativePath } from './common/pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {

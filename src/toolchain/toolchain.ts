@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { resolvePath } from './pathUtils';
+import { resolvePath } from '../common/pathUtils';
 
 export const COMPILER_TOOLS = [
 	'fcc896s.exe',

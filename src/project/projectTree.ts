@@ -4,9 +4,9 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { collectFilesByType, collectFilesByTypeInFolder, collectMemberPaths, getMemberFileType, orderProjectMembersForTree } from './memberUtils';
-import { isSamePath, resolvePath } from './pathUtils';
-import type { F2mcProjectConfig, F2mcProjectInfo, F2mcProjectMember } from './types';
+import { collectFilesByType, collectFilesByTypeInFolder, collectMemberPaths, getMemberFileType, orderProjectMembersForTree } from '../common/memberUtils';
+import { isSamePath, resolvePath } from '../common/pathUtils';
+import type { F2mcProjectConfig, F2mcProjectInfo, F2mcProjectMember } from '../types';
 
 interface F2mcProjectNodeInit {
 	label: string;

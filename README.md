@@ -51,7 +51,7 @@
 
 #### 芯片支持
 
-当前支持的芯片型号：`MB95F636H/K`、`MB95F634H/K`（与烧录器固件 MCUtype 表一致，如需扩展请补充 `src/flasher/mcuTable.ts`）。
+当前支持的芯片型号：`MB95F636H/K`、`MB95F634H/K`（与烧录器固件 MCUtype 表一致，如需扩展请补充 `src/flasher/zeztek/mcuTable.ts`）。
 其中 `MB95F636H/K` 已经真机完整验证；`MB95F634H/K` 型号表数据与烧录器厂商 MCUtype 表一致，但尚未真机验证。
 
 > 💡 **注意**
