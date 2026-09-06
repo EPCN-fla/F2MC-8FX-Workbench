@@ -12,7 +12,7 @@ export interface MCUType {
 
 export const BUILTIN_MCUS: MCUType[] = [
 	{ name: 'MB95F636H/K', start: 0x8000, end: 0xFFFF, kbLabel: '32K', chipCode: 0x14, lowBank: 0x1000 },
-	{ name: 'MB95F634H/K', start: 0x8000, end: 0xFFFF, kbLabel: '20K', chipCode: 0x10, lowBank: 0x1000 }
+	{ name: 'MB95F634H/K', start: 0xC000, end: 0xFFFF, kbLabel: '20K', chipCode: 0x10, lowBank: 0x1000 }
 ];
 
 // "MB95F636H/K" 这类型号名按 "/" 拆分出具体型号别名（H 变体 + K 变体），
