@@ -392,17 +392,43 @@ async function selectProjectChip(config: F2mcProjectConfig, chips: F2mcChipInfo[
 	return true;
 }
 
+// showQuickPick 总是高亮首项（placeHolder 仅是提示文本）；
+// 用 createQuickPick + activeItems 把高亮移到当前配置项，列表顺序保持不变
+function showQuickPickActive<T extends vscode.QuickPickItem>(items: T[], options: vscode.QuickPickOptions, active: T | undefined): Promise<T | undefined> {
+	return new Promise<T | undefined>(resolve => {
+		const picker = vscode.window.createQuickPick<T>();
+		picker.items = items;
+		picker.title = options.title;
+		picker.placeholder = options.placeHolder;
+		picker.matchOnDescription = options.matchOnDescription ?? false;
+		picker.matchOnDetail = options.matchOnDetail ?? false;
+		if (active) {
+			picker.activeItems = [active];
+		}
+		picker.onDidAccept(() => {
+			resolve(picker.selectedItems[0]);
+			picker.hide();
+		});
+		picker.onDidHide(() => {
+			resolve(undefined);
+			picker.dispose();
+		});
+		picker.show();
+	});
+}
+
 async function selectChipByCategory(chips: F2mcChipInfo[], project: F2mcProjectInfo): Promise<F2mcChipInfo | undefined> {
 	const currentChip = findChipByModel(chips, project.cpuName);
-	const selectedCategory = await vscode.window.showQuickPick(getChipCategories(chips), {
+	const items = getChipCategories(chips).map(category => ({ label: category }));
+	const selectedCategory = await showQuickPickActive(items, {
 		title: '选择芯片类别',
 		placeHolder: currentChip?.category ?? '请选择芯片类别'
-	});
+	}, items.find(item => item.label === currentChip?.category));
 	if (!selectedCategory) {
 		return undefined;
 	}
 
-	return selectChipByModel(chips.filter(chip => chip.category === selectedCategory), project, selectedCategory);
+	return selectChipByModel(chips.filter(chip => chip.category === selectedCategory.label), project, selectedCategory.label);
 }
 
 async function selectChipByModelInCurrentCategory(chips: F2mcChipInfo[], project: F2mcProjectInfo): Promise<F2mcChipInfo | undefined> {
@@ -413,17 +439,18 @@ async function selectChipByModelInCurrentCategory(chips: F2mcChipInfo[], project
 }
 
 async function selectChipByModel(chips: F2mcChipInfo[], project: F2mcProjectInfo, category?: string): Promise<F2mcChipInfo | undefined> {
-	const selected = await vscode.window.showQuickPick(chips.map(chip => ({
+	const items = chips.map(chip => ({
 		label: chip.model,
 		description: chip.category,
 		detail: `ROM ${chip.romStart}-${chip.romEnd} / RAM ${chip.ramStart}-${chip.ramEnd}`,
 		chip
-	})), {
+	}));
+	const selected = await showQuickPickActive(items, {
 		title: category ? `选择芯片型号 - ${category}` : '选择芯片型号',
 		placeHolder: project.cpuName ?? '请选择芯片型号',
 		matchOnDescription: true,
 		matchOnDetail: true
-	});
+	}, items.find(item => item.chip.model === project.cpuName));
 	return selected?.chip;
 }
 
@@ -431,13 +458,14 @@ async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Prom
 	const settings = getProgrammerSettings();
 	if (settingKey === 'type') {
 		const current = settings.programmerType;
-		const picked = await vscode.window.showQuickPick([
+		const typeItems = [
 			{ label: 'Zeztek', description: '上海泽兆烧录器', value: 'zezhao' as const },
 			{ label: 'F2MC-LINK', description: '自制编程器', value: 'f2mcLink' as const }
-		], {
+		];
+		const picked = await showQuickPickActive(typeItems, {
 			title: '选择编程器型号',
 			placeHolder: current === 'f2mcLink' ? 'F2MC-LINK' : 'Zeztek'
-		});
+		}, typeItems.find(item => item.value === current));
 		if (picked && picked.value !== current) {
 			await updateProgrammerSetting('programmerType', picked.value);
 			void vscode.window.showInformationMessage(`已切换编程器：${picked.label}。`);
@@ -447,13 +475,14 @@ async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Prom
 
 	if (settingKey === 'mode') {
 		const current = settings.programmerMode;
-		const picked = await vscode.window.showQuickPick([
+		const modeItems = [
 			{ label: '离线', description: '参数与固件保存到烧录器，也可按盒子编程键烧写（推荐）', value: 'offline' as const },
 			{ label: '在线', description: '全程由 PC 控制，盒子上的按键失效', value: 'online' as const }
-		], {
+		];
+		const picked = await showQuickPickActive(modeItems, {
 			title: '选择编程器模式',
 			placeHolder: current === 'online' ? '在线' : '离线'
-		});
+		}, modeItems.find(item => item.value === current));
 		if (picked && picked.value !== current) {
 			await updateProgrammerSetting('programmerMode', picked.value);
 			void vscode.window.showInformationMessage(`已切换编程器模式：${picked.label}。`);
@@ -467,13 +496,14 @@ async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Prom
 			? { on: '烧录完成后写安全位（0xFFFC=0x01），锁片后需整片擦除解锁（烧录时自动处理）', off: '不写安全位（默认）' }
 			: { on: '烧录完成后复位运行（编程器无复位硬件，实际为断电重新上电）（默认）', off: '保持编程模式，便于连续校验/读取' };
 		const current = settingKey === 'secure' ? settings.f2mcLinkSecure : settings.f2mcLinkReset;
-		const picked = await vscode.window.showQuickPick([
+		const toggleItems = [
 			{ label: '开启', description: descriptions.on, value: true },
 			{ label: '关闭', description: descriptions.off, value: false }
-		], {
+		];
+		const picked = await showQuickPickActive(toggleItems, {
 			title: `F2MC-LINK ${title}`,
 			placeHolder: current ? '开启' : '关闭'
-		});
+		}, toggleItems.find(item => item.value === current));
 		if (picked && picked.value !== current) {
 			await updateProgrammerSetting(settingKey === 'secure' ? 'f2mcLinkSecure' : 'f2mcLinkReset', picked.value);
 			void vscode.window.showInformationMessage(`已${picked.value ? '开启' : '关闭'}${title}。`);
@@ -482,13 +512,14 @@ async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Prom
 	}
 
 	const current = settings.programmerPower;
-	const picked = await vscode.window.showQuickPick([
+	const powerItems = [
 		{ label: '5V', value: '5V' as const },
 		{ label: '3.3V', value: '3.3V' as const }
-	], {
+	];
+	const picked = await showQuickPickActive(powerItems, {
 		title: '选择目标电压',
 		placeHolder: current
-	});
+	}, powerItems.find(item => item.value === current));
 	if (picked && picked.value !== current) {
 		await updateProgrammerSetting('programmerPower', picked.value);
 		void vscode.window.showInformationMessage(`已切换目标电压：${picked.label}。`);
