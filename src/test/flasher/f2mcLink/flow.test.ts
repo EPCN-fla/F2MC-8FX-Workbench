@@ -5,7 +5,7 @@ import { describe, it } from 'node:test';
 
 import type { ChipDef } from '../../../flasher/f2mcLink/chipdef';
 import { ProgError } from '../../../flasher/f2mcLink/errors';
-import { program, type CancelToken, type FlowEvent, type FlowStage } from '../../../flasher/f2mcLink/flow';
+import { eraseChip, program, type CancelToken, type FlowEvent, type FlowStage } from '../../../flasher/f2mcLink/flow';
 import { parseHexImage } from '../../../flasher/f2mcLink/hexfile';
 import { F2mcLinkClient } from '../../../flasher/f2mcLink/proto';
 import { SimProgrammer, SimState } from '../../../flasher/f2mcLink/sim';
@@ -105,5 +105,19 @@ describe('f2mcLink/flow', () => {
 			program(client, image, DEFAULT_OPTIONS, () => undefined, noCancel()),
 			(error: ProgError) => error.message.includes('校验失败')
 		);
+	});
+
+	it('连续擦除与烧录可从任意固件状态重新进入编程模式', async () => {
+		const image = parseHexImage(makeHex([[0x8000, Array(64).fill(0x5A)]]), CHIP);
+		const sim = new SimProgrammer();
+		const client = new F2mcLinkClient(sim);
+
+		await eraseChip(client, () => undefined, noCancel());
+		await program(client, image, { writeSecure: false, resetAfter: false }, () => undefined, noCancel());
+		await eraseChip(client, () => undefined, noCancel());
+
+		equal(sim.flash.size, 0);
+		equal(sim.state, SimState.ERASED);
+		equal(sim.frameLog.filter(frame => frame[1] === 0x03).length, 3);
 	});
 });

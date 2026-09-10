@@ -80,6 +80,23 @@ describe('f2mcLink/vendor+proto', () => {
 		equal(sim.flash.get(0x8123 + 129), 0xAB);
 	});
 
+	it('SET_CHIP 下发型号名供固件选择 DA', async () => {
+		const sim = new SimProgrammer();
+		const client = new F2mcLinkClient(sim);
+		await client.setChip('MB95F698K');
+		equal(sim.chipName, 'MB95F698K');
+		const frame = sim.frameLog.find(item => item[1] === Cmd.SET_CHIP);
+		if (!frame) {
+			throw new Error('缺少 SET_CHIP 帧');
+		}
+		equal(frame.subarray(4).toString('ascii'), 'MB95F698K');
+	});
+
+	it('RESET_RUN 解析新版固件复位方式', async () => {
+		const client = new F2mcLinkClient(new SimProgrammer());
+		equal(await client.resetRun(), 'simulated');
+	});
+
 	it('READ_BEGIN/DATA 分块取回', async () => {
 		const sim = new SimProgrammer();
 		const client = new F2mcLinkClient(sim);
