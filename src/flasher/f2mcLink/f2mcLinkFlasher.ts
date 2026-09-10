@@ -72,11 +72,11 @@ async function pickChannel(): Promise<F2mcLinkChannelInfo | undefined> {
 }
 
 export async function runF2mcLinkErase(outputChannel: vscode.OutputChannel): Promise<void> {
-	const confirm = '擦除';
+	const confirm = '确认';
+	const cancel = '取消';
 	const choice = await vscode.window.showWarningMessage(
 		'确认整片擦除目标芯片？芯片内程序与数据将全部清除（含安全锁解除）。',
-		{ modal: true },
-		confirm
+		confirm, cancel
 	);
 	if (choice !== confirm) {
 		return;
