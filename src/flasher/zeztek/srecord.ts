@@ -56,20 +56,16 @@ export function parseS19(text: string): SRecordSegment[] {
 		}
 		let address: number;
 		let data: Buffer;
-		if (type === '1' || type === '2') {
-			if (payload.length < 2) {
+		// 地址宽度按规范：S1=2 字节、S2=3 字节、S3=4 字节
+		const addrLen = type === '1' ? 2 : type === '2' ? 3 : type === '3' ? 4 : 0;
+		if (addrLen > 0) {
+			if (payload.length < addrLen) {
 				throw new SRecordError(`第 ${lineNo + 1} 行: 地址字段过短`);
 			}
-			address = payload.readUInt16BE(0);
-			data = Buffer.from(payload.subarray(2));
-		} else if (type === '3') {
-			if (payload.length < 3) {
-				throw new SRecordError(`第 ${lineNo + 1} 行: 地址字段过短`);
-			}
-			address = payload.readUIntBE(0, 3);
-			data = Buffer.from(payload.subarray(3));
+			address = payload.readUIntBE(0, addrLen);
+			data = Buffer.from(payload.subarray(addrLen));
 		} else {
-			continue; // S0 头 / S7~S9 结束记录
+			continue; // S0 头 / S5 计数 / S7~S9 结束记录
 		}
 		for (let i = 0; i < data.length; i++) {
 			cells.set(address + i, data[i]);
