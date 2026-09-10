@@ -3,13 +3,15 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import type { F2mcChipInfo } from './chipCatalog';
+import { getProgrammerSettings } from '../common/programmerSettings';
 import { toWorkspaceRelativePath } from '../common/pathUtils';
 import type { F2mcProjectConfig, F2mcProjectInfo } from '../types';
 
-export type F2mcSettingsNodeKind = 'section' | 'property' | 'chip' | 'empty';
+export type F2mcSettingsNodeKind = 'section' | 'property' | 'chip' | 'programmer' | 'empty';
 
 export type F2mcProjectPropertyKey = 'loadModuleName' | 'loadModuleDirectory' | 'objectDirectory' | 'listDirectory';
 export type F2mcChipSelectionKey = 'category' | 'model';
+export type F2mcProgrammerSettingKey = 'type' | 'mode' | 'power' | 'secure' | 'reset';
 
 interface F2mcSettingsNodeInit {
 	label: string;
@@ -21,6 +23,7 @@ interface F2mcSettingsNodeInit {
 	project?: F2mcProjectInfo;
 	propertyKey?: F2mcProjectPropertyKey;
 	chipKey?: F2mcChipSelectionKey;
+	programmerKey?: F2mcProgrammerSettingKey;
 	description?: string;
 	tooltip?: string;
 }
@@ -68,6 +71,7 @@ export class F2mcSettingsNode extends vscode.TreeItem {
 	public readonly project: F2mcProjectInfo | undefined;
 	public readonly propertyKey: F2mcProjectPropertyKey | undefined;
 	public readonly chipKey: F2mcChipSelectionKey | undefined;
+	public readonly programmerKey: F2mcProgrammerSettingKey | undefined;
 
 	public constructor(init: F2mcSettingsNodeInit, extensionPath: string) {
 		super(init.label, init.collapsibleState ?? vscode.TreeItemCollapsibleState.None);
@@ -75,6 +79,7 @@ export class F2mcSettingsNode extends vscode.TreeItem {
 		this.project = init.project;
 		this.propertyKey = init.propertyKey;
 		this.chipKey = init.chipKey;
+		this.programmerKey = init.programmerKey;
 		this.contextValue = `f2mc.setting.${init.kind}`;
 		this.command = init.command;
 		this.description = init.description;
@@ -128,6 +133,10 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 			return this.createChipSelectionNodes();
 		}
 
+		if (element.kind === 'section' && element.label === '编程器配置') {
+			return this.createProgrammerNodes();
+		}
+
 		return [];
 	}
 
@@ -143,6 +152,12 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 				label: '芯片选择',
 				kind: 'section',
 				iconName: 'chip.svg',
+				collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
+			}, this.extensionPath),
+			new F2mcSettingsNode({
+				label: '编程器配置',
+				kind: 'section',
+				iconName: 'download.svg',
 				collapsibleState: vscode.TreeItemCollapsibleState.Collapsed
 			}, this.extensionPath),
 			new F2mcSettingsNode({
@@ -236,6 +251,89 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 				}
 			}, this.extensionPath)
 		];
+	}
+
+	private createProgrammerNodes(): F2mcSettingsNode[] {
+		const settings = getProgrammerSettings();
+		const isZezhao = settings.programmerType === 'zezhao';
+		const typeLabel = isZezhao ? 'Zeztek（泽兆）' : 'F2MC-LINK（自制）';
+		const modeLabel = settings.programmerMode === 'online' ? '在线' : '离线';
+		const powerLabel = settings.programmerPower;
+		const secureOn = settings.f2mcLinkSecure;
+		const resetOn = settings.f2mcLinkReset;
+
+		const programmerNode = (init: Omit<F2mcSettingsNodeInit, 'kind'>): F2mcSettingsNode =>
+			new F2mcSettingsNode({ ...init, kind: 'programmer' }, this.extensionPath);
+
+		const nodes = [
+			programmerNode({
+				label: '型号选择',
+				icon: new vscode.ThemeIcon('circuit-board'),
+				programmerKey: 'type',
+				description: typeLabel,
+				tooltip: `型号选择: ${typeLabel}`,
+				command: {
+					command: 'f2mc_workbench.settings.editProgrammerSetting',
+					title: '选择编程器型号',
+					arguments: ['type']
+				}
+			}),
+			programmerNode({
+				label: '编程器模式',
+				icon: new vscode.ThemeIcon('settings-gear'),
+				programmerKey: 'mode',
+				description: isZezhao ? modeLabel : '在线（固定）',
+				tooltip: isZezhao ? `编程器模式: ${modeLabel}` : '编程器模式: F2MC-LINK 全程由 PC 控制（在线）',
+				command: isZezhao ? {
+					command: 'f2mc_workbench.settings.editProgrammerSetting',
+					title: '选择编程器模式',
+					arguments: ['mode']
+				} : undefined
+			}),
+			programmerNode({
+				label: '目标电压',
+				icon: new vscode.ThemeIcon('plug'),
+				programmerKey: 'power',
+				description: isZezhao ? powerLabel : '5V（固定）',
+				tooltip: isZezhao ? `目标电压: ${powerLabel}` : '目标电压: F2MC-LINK 固定 5V 供电',
+				command: isZezhao ? {
+					command: 'f2mc_workbench.settings.editProgrammerSetting',
+					title: '选择目标电压',
+					arguments: ['power']
+				} : undefined
+			})
+		];
+
+		if (!isZezhao) {
+			nodes.push(
+				programmerNode({
+					label: '写安全位',
+					icon: new vscode.ThemeIcon('shield'),
+					programmerKey: 'secure',
+					description: secureOn ? '开启' : '关闭',
+					tooltip: `写安全位: ${secureOn ? '开启' : '关闭'}（烧录完成后写 0xFFFC=0x01，锁片后需整片擦除解锁）`,
+					command: {
+						command: 'f2mc_workbench.settings.editProgrammerSetting',
+						title: '设置写安全位',
+						arguments: ['secure']
+					}
+				}),
+				programmerNode({
+					label: '复位运行',
+					icon: new vscode.ThemeIcon('debug-restart'),
+					programmerKey: 'reset',
+					description: resetOn ? '开启' : '关闭',
+					tooltip: `复位运行: ${resetOn ? '开启' : '关闭'}（烧录完成后断电重新上电运行；关闭则保持编程模式）`,
+					command: {
+						command: 'f2mc_workbench.settings.editProgrammerSetting',
+						title: '设置复位运行',
+						arguments: ['reset']
+					}
+				})
+			);
+		}
+
+		return nodes;
 	}
 
 	private getActiveProject(): F2mcProjectInfo | undefined {

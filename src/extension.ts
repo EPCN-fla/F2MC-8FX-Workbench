@@ -13,7 +13,8 @@ import { parsePrjProject, parseWspProject } from './project/projectParser';
 import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './project/projectStorage';
 import { F2mcProjectNode, F2mcProjectTreeProvider } from './project/projectTree';
 import { saveProjectFiles } from './project/projectWriter';
-import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './project/settingsTree';
+import { F2mcChipSelectionKey, F2mcProgrammerSettingKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './project/settingsTree';
+import { getProgrammerSettings, initProgrammerSettings, updateProgrammerSetting } from './common/programmerSettings';
 import { pickAndSetupToolchain } from './toolchain/toolchainInstaller';
 import { toWorkspaceRelativePath } from './common/pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
@@ -21,6 +22,7 @@ import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const treeProvider = new F2mcProjectTreeProvider(context.extensionPath);
 	const settingsTreeProvider = new F2mcSettingsTreeProvider(context.extensionPath);
+	initProgrammerSettings(context.globalState);
 	const treeView = vscode.window.createTreeView('fh.view', {
 		treeDataProvider: treeProvider,
 		dragAndDropController: treeProvider,
@@ -48,6 +50,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			const message = error instanceof Error ? error.message : String(error);
 			outputChannel.appendLine(`[project] 保存工程索引失败: ${message}`);
 			void vscode.window.showErrorMessage(`保存 F2MC-8FX 工程索引失败：${message}`);
+		}
+	}));
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+		if (event.affectsConfiguration('f2mc-8fx-workbench')) {
+			settingsTreeProvider.refresh();
 		}
 	}));
 
@@ -97,6 +104,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		vscode.commands.registerCommand('f2mc_workbench.settings.openBuilderOptions', async () => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
 			await BuilderOptionsWebview.open(context, config);
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.settings.editProgrammerSetting', async (settingKey?: F2mcProgrammerSettingKey) => {
+			if (settingKey) {
+				await editProgrammerSetting(settingKey);
+				settingsTreeProvider.refresh();
+			}
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.settings.installToolchain', async () => {
 			await pickAndSetupToolchain();
@@ -388,6 +401,74 @@ async function selectChipByModel(chips: F2mcChipInfo[], project: F2mcProjectInfo
 		matchOnDetail: true
 	});
 	return selected?.chip;
+}
+
+async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Promise<void> {
+	const settings = getProgrammerSettings();
+	if (settingKey === 'type') {
+		const current = settings.programmerType;
+		const picked = await vscode.window.showQuickPick([
+			{ label: 'Zeztek', description: '上海泽兆烧录器', value: 'zezhao' as const },
+			{ label: 'F2MC-LINK', description: '自制编程器', value: 'f2mcLink' as const }
+		], {
+			title: '选择编程器型号',
+			placeHolder: current === 'f2mcLink' ? 'F2MC-LINK' : 'Zeztek'
+		});
+		if (picked && picked.value !== current) {
+			await updateProgrammerSetting('programmerType', picked.value);
+			void vscode.window.showInformationMessage(`已切换编程器：${picked.label}。`);
+		}
+		return;
+	}
+
+	if (settingKey === 'mode') {
+		const current = settings.programmerMode;
+		const picked = await vscode.window.showQuickPick([
+			{ label: '离线', description: '参数与固件保存到烧录器，也可按盒子编程键烧写（推荐）', value: 'offline' as const },
+			{ label: '在线', description: '全程由 PC 控制，盒子上的按键失效', value: 'online' as const }
+		], {
+			title: '选择编程器模式',
+			placeHolder: current === 'online' ? '在线' : '离线'
+		});
+		if (picked && picked.value !== current) {
+			await updateProgrammerSetting('programmerMode', picked.value);
+			void vscode.window.showInformationMessage(`已切换编程器模式：${picked.label}。`);
+		}
+		return;
+	}
+
+	if (settingKey === 'secure' || settingKey === 'reset') {
+		const title = settingKey === 'secure' ? '写安全位' : '复位运行';
+		const descriptions = settingKey === 'secure'
+			? { on: '烧录完成后写安全位（0xFFFC=0x01），锁片后需整片擦除解锁（烧录时自动处理）', off: '不写安全位（默认）' }
+			: { on: '烧录完成后复位运行（编程器无复位硬件，实际为断电重新上电）（默认）', off: '保持编程模式，便于连续校验/读取' };
+		const current = settingKey === 'secure' ? settings.f2mcLinkSecure : settings.f2mcLinkReset;
+		const picked = await vscode.window.showQuickPick([
+			{ label: '开启', description: descriptions.on, value: true },
+			{ label: '关闭', description: descriptions.off, value: false }
+		], {
+			title: `F2MC-LINK ${title}`,
+			placeHolder: current ? '开启' : '关闭'
+		});
+		if (picked && picked.value !== current) {
+			await updateProgrammerSetting(settingKey === 'secure' ? 'f2mcLinkSecure' : 'f2mcLinkReset', picked.value);
+			void vscode.window.showInformationMessage(`已${picked.value ? '开启' : '关闭'}${title}。`);
+		}
+		return;
+	}
+
+	const current = settings.programmerPower;
+	const picked = await vscode.window.showQuickPick([
+		{ label: '5V', value: '5V' as const },
+		{ label: '3.3V', value: '3.3V' as const }
+	], {
+		title: '选择目标电压',
+		placeHolder: current
+	});
+	if (picked && picked.value !== current) {
+		await updateProgrammerSetting('programmerPower', picked.value);
+		void vscode.window.showInformationMessage(`已切换目标电压：${picked.label}。`);
+	}
 }
 
 async function editProjectProperty(config: F2mcProjectConfig, propertyKey: F2mcProjectPropertyKey): Promise<boolean> {
