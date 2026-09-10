@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 
-import type { F2mcProjectMember } from './types';
+import type { F2mcProjectMember } from '../types';
 
 export function orderProjectMembersForTree(members: F2mcProjectMember[]): F2mcProjectMember[] {
 	return [

@@ -1,12 +1,17 @@
 .git
 .vscode
 .vscode-test
+docs
 src
+test
+toolchain
 .gitignore
 .yarnrc
 
 **/tsconfig.json
 **/eslint.config.mjs
+.vscode-test.mjs
+esbuild.js
 **/*.map
 **/*.ts
 **/.vscode-test.*
@@ -14,11 +19,4 @@ src
 **/yarn.lock
 **/package-lock.json
 
-docs
-toolchain
-res/V30L14
-res/V30L15
 *.vsix
-diagnose-flash.cjs
-ab-load-python.py
-test-set-pulse.ps1

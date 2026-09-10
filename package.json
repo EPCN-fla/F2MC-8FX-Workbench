@@ -6,7 +6,7 @@
     "F2MC",
     "F2MC-8FX"
   ],
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "Fla1337",
   "engines": {
     "vscode": "^1.123.0"
@@ -60,6 +60,14 @@
         "icon": {
           "dark": "./res/icon/download.svg",
           "light": "./res/icon/download.svg"
+        }
+      },
+      {
+        "command": "f2mc_workbench.project.erase",
+        "title": "%f2mc_workbench.project.erase%",
+        "icon": {
+          "dark": "./res/icon/erase.svg",
+          "light": "./res/icon/erase.svg"
         }
       },
       {
@@ -131,31 +139,26 @@
           "default": "",
           "scope": "machine-overridable",
           "markdownDescription": "SOFTUNE 编译器目录（Bin 目录或其上一级根目录，如 `D:\\SOFTUNE`）。扩展不再内置编译器，必须配置此项后才能编译。支持 `${workspaceFolder}` 变量。"
-        },
-        "f2mc-8fx-workbench.programmerPort": {
-          "type": "string",
-          "default": "",
-          "scope": "machine-overridable",
-          "markdownDescription": "泽兆烧录器串口（如 `COM8`）。留空则每次烧录时弹出选择，选择后自动记住。"
-        },
-        "f2mc-8fx-workbench.programmerMode": {
-          "type": "string",
-          "enum": ["offline", "online"],
-          "enumDescriptions": ["离线（推荐）：参数与固件保存到烧录器，可 PC 一键烧录，也可按盒子上的编程键烧写", "在线：全程由 PC 控制，盒子上的按键失效"],
-          "default": "offline",
-          "scope": "machine-overridable",
-          "markdownDescription": "烧写方式。若设置命令无响应，请给烧录器断电重新上电后再试（残留上次会话时盒子会忽略设置命令）。"
-        },
-        "f2mc-8fx-workbench.programmerPower": {
-          "type": "string",
-          "enum": ["5V", "3.3V"],
-          "enumDescriptions": ["5V", "3.3V"],
-          "default": "5V",
-          "scope": "machine-overridable",
-          "markdownDescription": "目标芯片供电电压。"
         }
       }
     },
+    "keybindings": [
+      {
+		"command": "f2mc_workbench.project.build",
+		"key": "f7",
+		"when": "f2mc_workbench.enabled"
+	  },
+      {
+		"command": "f2mc_workbench.project.download",
+		"key": "f8",
+		"when": "f2mc_workbench.enabled"
+	  },
+      {
+		"command": "f2mc_workbench.project.erase",
+		"key": "f9",
+		"when": "f2mc_workbench.enabled"
+	  }
+    ],
     "menus": {
       "commandPalette": [
         {
@@ -174,6 +177,9 @@
         },
         {
           "command": "f2mc_workbench.project.download"
+        },
+        {
+          "command": "f2mc_workbench.project.erase"
         },
         {
           "command": "f2mc_workbench.project.clean"
@@ -230,8 +236,13 @@
         },
         {
           "when": "fla1337.f2mc_workbench.projectActived",
-          "command": "f2mc_workbench.project.clean",
+          "command": "f2mc_workbench.project.erase",
           "group": "navigation@5"
+        },
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.clean",
+          "group": "navigation@6"
         }
       ],
       "view/title": [
@@ -388,13 +399,14 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run package",
+    "package": "tsc --noEmit -p ./ && node esbuild.js --production",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "test:flasher": "node --test \"dist/test/flasher/*.test.js\""
+    "test:flasher": "node --test \"dist/test/flasher/**/*.test.js\""
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
@@ -402,11 +414,13 @@
     "@types/vscode": "^1.120.0",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.28.2",
     "eslint": "^9.39.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1"
   },
   "dependencies": {
+    "node-hid": "^3.2.0",
     "serialport": "^12.0.0"
   }
 }

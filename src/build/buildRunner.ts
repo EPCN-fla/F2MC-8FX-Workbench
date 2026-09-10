@@ -4,10 +4,10 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
-import { runFlashDownload } from './flasher/flasherService';
-import { findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
-import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
+import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from '../common/fileSystem';
+import { runFlashDownload, runFlashErase } from '../flasher/flasherService';
+import { findMissingCompilerTools, resolveCompilerDirectory } from '../toolchain/toolchain';
+import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from '../types';
 
 interface CommandSpec {
 	commandLines: string[];
@@ -59,7 +59,12 @@ export async function runProjectTask(
 	if (kind === 'download') {
 		const project = getActiveProject(config);
 		const layout = project ? createBuildLayout(project) : undefined;
-		await runFlashDownload(layout, outputChannel);
+		await runFlashDownload(layout, outputChannel, extensionPath);
+		return;
+	}
+
+	if (kind === 'erase') {
+		await runFlashErase(outputChannel);
 		return;
 	}
 
@@ -83,6 +88,7 @@ export async function runProjectTask(
 	const pty = new F2mcBuildPseudoterminal(command.commandLines.join(' & '), command.cwd, command.compilerDirectory);
 	sharedTerminal = vscode.window.createTerminal({ name: 'F2MC-8FX', pty, isTransient: true });
 	sharedTerminal.show(true);
+	await pty.waitForExit();
 }
 
 class F2mcBuildPseudoterminal implements vscode.Pseudoterminal {
@@ -92,6 +98,10 @@ class F2mcBuildPseudoterminal implements vscode.Pseudoterminal {
 	public readonly onDidClose = this.closeEmitter.event;
 	private child: childProcess.ChildProcess | undefined;
 	private finished = false;
+	private resolveExit: (() => void) | undefined;
+	private readonly exitPromise = new Promise<void>(resolve => {
+		this.resolveExit = resolve;
+	});
 
 	public constructor(
 		private readonly commandLine: string,
@@ -114,15 +124,27 @@ class F2mcBuildPseudoterminal implements vscode.Pseudoterminal {
 		this.child.on('error', error => {
 			this.finished = true;
 			this.writeEmitter.fire(`\r\nFailed to start build: ${error.message}\r\nPress any key to close...\r\n`);
+			this.notifyExit();
 		});
 		this.child.on('close', () => {
 			this.finished = true;
 			this.writeEmitter.fire('\r\nPress any key to close...\r\n');
+			this.notifyExit();
 		});
+	}
+
+	public waitForExit(): Promise<void> {
+		return this.exitPromise;
+	}
+
+	private notifyExit(): void {
+		this.resolveExit?.();
+		this.resolveExit = undefined;
 	}
 
 	public close(): void {
 		this.child?.kill();
+		this.notifyExit();
 	}
 
 	public handleInput(): void {

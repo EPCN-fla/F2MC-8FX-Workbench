@@ -3,9 +3,9 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { resolveCompilerIncludeDirectory } from './toolchain';
-import { HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from './constants';
-import type { F2mcProjectConfig, F2mcProjectInfo } from './types';
+import { resolveCompilerIncludeDirectory } from '../toolchain/toolchain';
+import { HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from '../constants';
+import type { F2mcProjectConfig, F2mcProjectInfo } from '../types';
 
 const BUILTIN_DEFINES: string[] = [
 	// Neutralize SOFTUNE-only type qualifiers so cpptools can parse I/O register headers

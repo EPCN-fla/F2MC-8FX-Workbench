@@ -1,6 +1,6 @@
 import * as path from 'node:path';
 
-import { readTextFile } from './fileSystem';
+import { readTextFile } from '../common/fileSystem';
 
 export interface F2mcChipInfo {
 	model: string;

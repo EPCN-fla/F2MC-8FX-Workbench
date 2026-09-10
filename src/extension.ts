@@ -1,26 +1,29 @@
 import * as path from 'node:path';
 
 import * as vscode from 'vscode';
+import { SerialPort } from 'serialport';
 
-import { BuilderOptionsWebview } from './builderOptionsWebview';
-import { runProjectTask } from './buildRunner';
-import { applyChipToProjectFiles } from './chipProjectWriter';
-import { findChipByModel, getChipCategories, loadChipCatalog } from './chipCatalog';
-import type { F2mcChipInfo } from './chipCatalog';
+import { BuilderOptionsWebview } from './build/builderOptionsWebview';
+import { runProjectTask } from './build/buildRunner';
+import { applyChipToProjectFiles } from './project/chipProjectWriter';
+import { findChipByModel, getChipCategories, loadChipCatalog } from './project/chipCatalog';
+import type { F2mcChipInfo } from './project/chipCatalog';
 import { PROJECT_CONTEXT } from './constants';
-import { registerCppConfigurationProvider } from './cppConfigurationProvider';
-import { parsePrjProject, parseWspProject } from './projectParser';
-import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './projectStorage';
-import { F2mcProjectNode, F2mcProjectTreeProvider } from './projectTree';
-import { saveProjectFiles } from './projectWriter';
-import { F2mcChipSelectionKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './settingsTree';
-import { pickAndSetupToolchain } from './toolchainInstaller';
-import { toWorkspaceRelativePath } from './pathUtils';
+import { registerCppConfigurationProvider } from './intellisense/cppConfigurationProvider';
+import { parsePrjProject, parseWspProject } from './project/projectParser';
+import { createProjectGitignore, createVsCodeWorkspace, discoverProjectConfig, persistProjectConfig } from './project/projectStorage';
+import { F2mcProjectNode, F2mcProjectTreeProvider } from './project/projectTree';
+import { saveProjectFiles } from './project/projectWriter';
+import { F2mcChipSelectionKey, F2mcProgrammerSettingKey, F2mcProjectPropertyKey, F2mcSettingsTreeProvider, getProjectPropertyLabel } from './project/settingsTree';
+import { getProgrammerSettings, initProgrammerSettings, updateProgrammerSetting } from './common/programmerSettings';
+import { pickAndSetupToolchain } from './toolchain/toolchainInstaller';
+import { toWorkspaceRelativePath } from './common/pathUtils';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
 	const treeProvider = new F2mcProjectTreeProvider(context.extensionPath);
 	const settingsTreeProvider = new F2mcSettingsTreeProvider(context.extensionPath);
+	initProgrammerSettings(context.globalState);
 	const treeView = vscode.window.createTreeView('fh.view', {
 		treeDataProvider: treeProvider,
 		dragAndDropController: treeProvider,
@@ -32,12 +35,38 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
 
 	const outputChannel = vscode.window.createOutputChannel('F2MC-8FX Build');
+	// 左侧对齐下 priority 越小越靠右：取负值让本插件按钮排在左侧区域的最右端
 	const statusBarItems = [
-		createStatusBarItem('f2mc_workbench.project.build', '$(tools)', '编译', '编译工程', 10),
-		createStatusBarItem('f2mc_workbench.project.download', '$(arrow-circle-down)', '烧录', '烧录目标文件', 9),
-		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', 8)
+		createStatusBarItem('f2mc_workbench.project.build', '$(tools)', '编译', '编译工程', -100),
+		createStatusBarItem('f2mc_workbench.project.download', '$(arrow-circle-down)', '烧录', '烧录目标文件', -101),
+		createStatusBarItem('f2mc_workbench.project.erase', '$(circle-slash)', '擦除', '整片擦除目标芯片', -102),
+		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', -103)
 	];
 	context.subscriptions.push(...statusBarItems);
+
+	// 状态栏执行动画：命令运行期间图标旋转，结束后恢复原图标
+	const statusBarIdleText = new Map<string, string>();
+	for (const item of statusBarItems) {
+		const command = item.command;
+		if (typeof command === 'string') {
+			statusBarIdleText.set(command, item.text);
+		}
+	}
+	async function withStatusBarSpin(command: string, run: () => Promise<void>): Promise<void> {
+		const item = statusBarItems.find(entry => entry.command === command);
+		const idleText = statusBarIdleText.get(command);
+		if (!item || idleText === undefined) {
+			await run();
+			return;
+		}
+		const label = idleText.replace(/^\S+\s+/, '');
+		item.text = `$(sync~spin) ${label}`;
+		try {
+			await run();
+		} finally {
+			item.text = idleText;
+		}
+	}
 	const chips = await loadChipCatalog(context.extensionPath);
 	settingsTreeProvider.setChips(chips);
 	context.subscriptions.push(treeView, settingsTreeView, outputChannel);
@@ -48,6 +77,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			const message = error instanceof Error ? error.message : String(error);
 			outputChannel.appendLine(`[project] 保存工程索引失败: ${message}`);
 			void vscode.window.showErrorMessage(`保存 F2MC-8FX 工程索引失败：${message}`);
+		}
+	}));
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+		if (event.affectsConfiguration('f2mc-8fx-workbench')) {
+			settingsTreeProvider.refresh();
 		}
 	}));
 
@@ -98,6 +132,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
 			await BuilderOptionsWebview.open(context, config);
 		}),
+		vscode.commands.registerCommand('f2mc_workbench.settings.editProgrammerSetting', async (settingKey?: F2mcProgrammerSettingKey) => {
+			if (settingKey) {
+				await editProgrammerSetting(settingKey);
+				settingsTreeProvider.refresh();
+			}
+		}),
 		vscode.commands.registerCommand('f2mc_workbench.settings.installToolchain', async () => {
 			await pickAndSetupToolchain();
 		}),
@@ -109,7 +149,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			await loadCurrentProject(true);
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.build', async (node?: F2mcProjectNode) => {
-			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'build', node);
+			await withStatusBarSpin('f2mc_workbench.project.build', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'build', node));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.addFile', async (node?: F2mcProjectNode) => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
@@ -132,10 +172,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 			}
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.clean', async (node?: F2mcProjectNode) => {
-			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'clean', node);
+			await withStatusBarSpin('f2mc_workbench.project.clean', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'clean', node));
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.erase', async () => {
+			await withStatusBarSpin('f2mc_workbench.project.erase', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'erase'));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.download', async () => {
-			await runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'download');
+			await withStatusBarSpin('f2mc_workbench.project.download', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'download'));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.addProject', async (node?: F2mcProjectNode) => {
 			const config = treeProvider.getProjectConfig() ?? await ensureProjectLoaded(loadCurrentProject);
@@ -355,17 +398,43 @@ async function selectProjectChip(config: F2mcProjectConfig, chips: F2mcChipInfo[
 	return true;
 }
 
+// showQuickPick 总是高亮首项（placeHolder 仅是提示文本）；
+// 用 createQuickPick + activeItems 把高亮移到当前配置项，列表顺序保持不变
+function showQuickPickActive<T extends vscode.QuickPickItem>(items: T[], options: vscode.QuickPickOptions, active: T | undefined): Promise<T | undefined> {
+	return new Promise<T | undefined>(resolve => {
+		const picker = vscode.window.createQuickPick<T>();
+		picker.items = items;
+		picker.title = options.title;
+		picker.placeholder = options.placeHolder;
+		picker.matchOnDescription = options.matchOnDescription ?? false;
+		picker.matchOnDetail = options.matchOnDetail ?? false;
+		if (active) {
+			picker.activeItems = [active];
+		}
+		picker.onDidAccept(() => {
+			resolve(picker.selectedItems[0]);
+			picker.hide();
+		});
+		picker.onDidHide(() => {
+			resolve(undefined);
+			picker.dispose();
+		});
+		picker.show();
+	});
+}
+
 async function selectChipByCategory(chips: F2mcChipInfo[], project: F2mcProjectInfo): Promise<F2mcChipInfo | undefined> {
 	const currentChip = findChipByModel(chips, project.cpuName);
-	const selectedCategory = await vscode.window.showQuickPick(getChipCategories(chips), {
+	const items = getChipCategories(chips).map(category => ({ label: category }));
+	const selectedCategory = await showQuickPickActive(items, {
 		title: '选择芯片类别',
 		placeHolder: currentChip?.category ?? '请选择芯片类别'
-	});
+	}, items.find(item => item.label === currentChip?.category));
 	if (!selectedCategory) {
 		return undefined;
 	}
 
-	return selectChipByModel(chips.filter(chip => chip.category === selectedCategory), project, selectedCategory);
+	return selectChipByModel(chips.filter(chip => chip.category === selectedCategory.label), project, selectedCategory.label);
 }
 
 async function selectChipByModelInCurrentCategory(chips: F2mcChipInfo[], project: F2mcProjectInfo): Promise<F2mcChipInfo | undefined> {
@@ -376,18 +445,108 @@ async function selectChipByModelInCurrentCategory(chips: F2mcChipInfo[], project
 }
 
 async function selectChipByModel(chips: F2mcChipInfo[], project: F2mcProjectInfo, category?: string): Promise<F2mcChipInfo | undefined> {
-	const selected = await vscode.window.showQuickPick(chips.map(chip => ({
+	const items = chips.map(chip => ({
 		label: chip.model,
 		description: chip.category,
 		detail: `ROM ${chip.romStart}-${chip.romEnd} / RAM ${chip.ramStart}-${chip.ramEnd}`,
 		chip
-	})), {
+	}));
+	const selected = await showQuickPickActive(items, {
 		title: category ? `选择芯片型号 - ${category}` : '选择芯片型号',
 		placeHolder: project.cpuName ?? '请选择芯片型号',
 		matchOnDescription: true,
 		matchOnDetail: true
-	});
+	}, items.find(item => item.chip.model === project.cpuName));
 	return selected?.chip;
+}
+
+async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Promise<void> {
+	const settings = getProgrammerSettings();
+	if (settingKey === 'port') {
+		let ports;
+		try {
+			ports = await SerialPort.list();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			void vscode.window.showErrorMessage(`枚举串口失败：${message}`);
+			return;
+		}
+		const items = [{ label: '自动检测', value: 'auto' }, ...ports.map(port => ({ label: port.path, description: port.manufacturer, value: port.path }))];
+		const picked = await showQuickPickActive(items, { title: '选择泽兆烧录器串口', placeHolder: settings.programmerPort === 'auto' ? '自动检测' : settings.programmerPort }, items.find(item => item.value === settings.programmerPort));
+		if (picked && picked.value !== settings.programmerPort) {
+			await updateProgrammerSetting('programmerPort', picked.value);
+			void vscode.window.showInformationMessage(`已设置泽兆烧录器串口：${picked.label}。`);
+		}
+		return;
+	}
+	if (settingKey === 'type') {
+		const current = settings.programmerType;
+		const typeItems = [
+			{ label: 'Zeztek', description: '上海泽兆烧录器', value: 'zezhao' as const },
+			{ label: 'F2MC-LINK', description: '自制编程器', value: 'f2mcLink' as const }
+		];
+		const picked = await showQuickPickActive(typeItems, {
+			title: '选择编程器型号',
+			placeHolder: current === 'f2mcLink' ? 'F2MC-LINK' : 'Zeztek'
+		}, typeItems.find(item => item.value === current));
+		if (picked && picked.value !== current) {
+			await updateProgrammerSetting('programmerType', picked.value);
+			void vscode.window.showInformationMessage(`已切换编程器：${picked.label}。`);
+		}
+		return;
+	}
+
+	if (settingKey === 'mode') {
+		const current = settings.programmerMode;
+		const modeItems = [
+			{ label: '离线', description: '参数与固件保存到烧录器，也可按盒子编程键烧写（推荐）', value: 'offline' as const },
+			{ label: '在线', description: '全程由 PC 控制，盒子上的按键失效', value: 'online' as const }
+		];
+		const picked = await showQuickPickActive(modeItems, {
+			title: '选择编程器模式',
+			placeHolder: current === 'online' ? '在线' : '离线'
+		}, modeItems.find(item => item.value === current));
+		if (picked && picked.value !== current) {
+			await updateProgrammerSetting('programmerMode', picked.value);
+			void vscode.window.showInformationMessage(`已切换编程器模式：${picked.label}。`);
+		}
+		return;
+	}
+
+	if (settingKey === 'secure' || settingKey === 'reset') {
+		const title = settingKey === 'secure' ? '写安全位' : '复位运行';
+		const descriptions = settingKey === 'secure'
+			? { on: '烧录完成后写安全位（0xFFFC=0x01），锁片后需整片擦除解锁（烧录时自动处理）', off: '不写安全位（默认）' }
+			: { on: '烧录完成后复位运行（编程器无复位硬件，实际为断电重新上电）（默认）', off: '保持编程模式，便于连续校验/读取' };
+		const current = settingKey === 'secure' ? settings.f2mcLinkSecure : settings.f2mcLinkReset;
+		const toggleItems = [
+			{ label: '开启', description: descriptions.on, value: true },
+			{ label: '关闭', description: descriptions.off, value: false }
+		];
+		const picked = await showQuickPickActive(toggleItems, {
+			title: `F2MC-LINK ${title}`,
+			placeHolder: current ? '开启' : '关闭'
+		}, toggleItems.find(item => item.value === current));
+		if (picked && picked.value !== current) {
+			await updateProgrammerSetting(settingKey === 'secure' ? 'f2mcLinkSecure' : 'f2mcLinkReset', picked.value);
+			void vscode.window.showInformationMessage(`已${picked.value ? '开启' : '关闭'}${title}。`);
+		}
+		return;
+	}
+
+	const current = settings.programmerPower;
+	const powerItems = [
+		{ label: '5V', value: '5V' as const },
+		{ label: '3.3V', value: '3.3V' as const }
+	];
+	const picked = await showQuickPickActive(powerItems, {
+		title: '选择目标电压',
+		placeHolder: current
+	}, powerItems.find(item => item.value === current));
+	if (picked && picked.value !== current) {
+		await updateProgrammerSetting('programmerPower', picked.value);
+		void vscode.window.showInformationMessage(`已切换目标电压：${picked.label}。`);
+	}
 }
 
 async function editProjectProperty(config: F2mcProjectConfig, propertyKey: F2mcProjectPropertyKey): Promise<boolean> {

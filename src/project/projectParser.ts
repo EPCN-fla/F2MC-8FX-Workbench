@@ -1,10 +1,10 @@
 import * as path from 'node:path';
 
-import { readIniSection } from './iniUtils';
-import { readTextFile } from './fileSystem';
-import { isSamePath, resolvePath } from './pathUtils';
-import { collectFilesByType, collectFilesByTypeInFolder, collectMemberPaths, orderProjectMembersForTree } from './memberUtils';
-import type { F2mcProjectConfig, F2mcProjectDirectories, F2mcProjectInfo, F2mcProjectMember } from './types';
+import { readIniSection } from '../common/iniUtils';
+import { readTextFile } from '../common/fileSystem';
+import { isSamePath, resolvePath } from '../common/pathUtils';
+import { collectFilesByType, collectFilesByTypeInFolder, collectMemberPaths, orderProjectMembersForTree } from '../common/memberUtils';
+import type { F2mcProjectConfig, F2mcProjectDirectories, F2mcProjectInfo, F2mcProjectMember } from '../types';
 
 interface ParsedMemberLine {
 	fileType: string;
