@@ -10,6 +10,8 @@ toolchain
 
 **/tsconfig.json
 **/eslint.config.mjs
+.vscode-test.mjs
+esbuild.js
 **/*.map
 **/*.ts
 **/.vscode-test.*
