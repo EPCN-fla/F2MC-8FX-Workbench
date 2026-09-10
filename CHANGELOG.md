@@ -6,6 +6,48 @@ All notable version changes will be recorded in this file.
 
 ***
 
+### [v0.2.1]
+
+**新增**:
+  - 原生支持 F2MC-LINK 自制编程器（F2MC-8FX-Programmer）一键烧录：插件内置
+    CMSIS-DAP v1(HID) 传输层（node-hid）与 vendor 协议客户端，移植自其 Rust 上位机
+    f2mc-core，USB 全平台免驱（Win7 兼容），无需安装上位机软件；HID 枚举/收发在
+    独立工作线程执行，不阻塞扩展宿主
+  - 烧录流程完整移植：PING（校验设备标识 "F2MC-LINK"，防止误操作其他 CMSIS-DAP
+    设备）→ 进入编程模式（安全锁自动整片擦除解锁重试一次）→ 整片擦除 → FLASH_INIT →
+    CR Trimming 检查/回写 → 分块写入(≤512B) → 读回校验(跳过 0xFFBB/BC/BD) →
+    [写安全位] → 断电上电复位运行；命令超时按协议吸收迟到响应，烧录过程可随时取消
+    （带外 ABORT(0x12) 强制中止）；设备拔出等错误立即上报，不再等待超时
+  - F2MC-LINK 烧录支持 Intel HEX 与 S-record（.mhx/.s19/.hex/.ihx/.ehx）按内容嗅探，
+    NVR 区（0xFFBB~0xFFBF）与安全位（0xFFFC）数据自动剔除并告警；芯片型号覆盖
+    F2MC-8FX 全部 216 款（与插件芯片选择共用 res/896.csv 型号库）
+  - “设置”视图新增“编程器配置”：型号选择（Zeztek / F2MC-LINK）、编程器模式
+    （泽兆可选离线/在线；F2MC-LINK 固定在线）、目标电压（泽兆可选 5V/3.3V；
+    F2MC-LINK 固定 5V）；选择 F2MC-LINK 时追加写安全位（默认关闭）、复位运行
+    （默认开启）两项
+  - 泽兆烧录器串口改为自动检测（按 CP210x VID/PID 与设备路径匹配，不按厂商名
+    兜底，避免误判其他 CP210x 开发板），检测到多个时弹出选择
+  - 编程器模拟器离线端到端测试（虚拟 Flash + 故障注入）：全流程烧录、安全锁解锁、
+    写安全位、取消、校验失败检出
+  - 编译/烧录/清理指令执行过程中，底部状态栏图标使用旋转图标显示（模拟动画）
+
+**修复**:
+  - 泽兆型号表 MB95F634H/K 上 bank 起始地址 0x8000 → 0xC000（与 896.csv 及 20K
+    容量一致），并新增两套芯片表一致性交叉测试
+  - 泽兆 S-record 解析 S2/S3 地址宽度修正为规范值（3/4 字节），与 F2MC-LINK 解析一致
+  - F2MC-LINK 烧录文件地址校验增加 0xFFFF 上限，杜绝越界地址被 16 位截断回绕
+  - 选择弹窗永远高亮列表第一项，现修正为当前配置项
+
+**优化**:
+  - 代码结构按照模块化整理
+
+**移除**:
+  - 泽兆编程器串口 programmerPort 设置项
+  - 编程器相关配置项（programmerType/programmerMode/programmerPower/f2mcLinkSecure/
+  f2mcLinkReset）
+
+***
+
 ### [v0.2.0]
 
 **新增**:
