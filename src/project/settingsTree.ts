@@ -304,14 +304,13 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 				} : undefined
 			})
 		];
+
 		if (isZezhao) {
 			nodes.splice(1, 0, programmerNode({
 				label: '串口号', iconName: 'serialport.svg', programmerKey: 'port', description: portLabel,
 				command: { command: 'f2mc_workbench.settings.editProgrammerSetting', title: '选择串口号', arguments: ['port'] }
 			}));
-		}
-
-		if (!isZezhao) {
+		} else {
 			nodes.push(
 				programmerNode({
 					label: '写安全位',

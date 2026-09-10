@@ -25,8 +25,8 @@ const DEFAULTS: ProgrammerSettings = {
 	programmerMode: 'offline',
 	programmerPower: '5V',
 	f2mcLinkSecure: false,
-	f2mcLinkReset: true
-	,programmerPort: 'auto'
+	f2mcLinkReset: true,
+	programmerPort: 'auto'
 };
 
 let storage: vscode.Memento | undefined;
@@ -43,8 +43,8 @@ export function getProgrammerSettings(): ProgrammerSettings {
 		programmerMode: stored.programmerMode ?? legacy.get<ProgrammerMode>('programmerMode') ?? DEFAULTS.programmerMode,
 		programmerPower: stored.programmerPower ?? legacy.get<ProgrammerPower>('programmerPower') ?? DEFAULTS.programmerPower,
 		f2mcLinkSecure: stored.f2mcLinkSecure ?? legacy.get<boolean>('f2mcLinkSecure') ?? DEFAULTS.f2mcLinkSecure,
-		f2mcLinkReset: stored.f2mcLinkReset ?? legacy.get<boolean>('f2mcLinkReset') ?? DEFAULTS.f2mcLinkReset
-		,programmerPort: stored.programmerPort ?? DEFAULTS.programmerPort
+		f2mcLinkReset: stored.f2mcLinkReset ?? legacy.get<boolean>('f2mcLinkReset') ?? DEFAULTS.f2mcLinkReset,
+		programmerPort: stored.programmerPort ?? DEFAULTS.programmerPort
 	};
 }
 
