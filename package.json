@@ -142,6 +142,23 @@
         }
       }
     },
+    "keybindings": [
+      {
+		"command": "f2mc_workbench.project.build",
+		"key": "f7",
+		"when": "f2mc_workbench.enabled"
+	  },
+      {
+		"command": "f2mc_workbench.project.download",
+		"key": "f8",
+		"when": "f2mc_workbench.enabled"
+	  },
+      {
+		"command": "f2mc_workbench.project.erase",
+		"key": "f9",
+		"when": "f2mc_workbench.enabled"
+	  }
+    ],
     "menus": {
       "commandPalette": [
         {
