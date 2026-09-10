@@ -227,6 +227,8 @@ export async function runF2mcLinkDownload(layout: BuildLayout | undefined, outpu
 			transport.setCancel(cancel);
 			const client = new F2mcLinkClient(transport);
 			try {
+				log(`目标型号: ${chip.name}`);
+				await client.setChip(chip.name);
 				const onEvent = (event: FlowEvent): void => {
 					if (event.type === 'stage') {
 						progress.report({ message: `${STAGE_LABELS[event.stage]}…` });

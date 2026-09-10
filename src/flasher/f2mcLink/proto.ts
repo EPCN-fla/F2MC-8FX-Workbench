@@ -1,4 +1,4 @@
-// L1 命令集封装：16 条 vendor 命令的强类型客户端，含 BEGIN/DATA/COMMIT 分块流。
+// L1 vendor 命令集的强类型客户端，含 BEGIN/DATA/COMMIT 分块流。
 // 移植自 F2MC-8FX-Programmer hmi/crates/f2mc-core/src/proto.rs。
 //
 // 帧格式：请求 [0x80][CMD][LEN_L][LEN_H][PAYLOAD≤56B]，响应 [0x80][STATUS][DATA]。
@@ -26,14 +26,15 @@ export const Cmd = {
 	WRITE_SECURE: 0x0F,
 	SEND_BREAK: 0x10,
 	DISCONNECT: 0x11,
-	ABORT: 0x12
+	ABORT: 0x12,
+	SET_CHIP: 0x13
 } as const;
 
 /** 各命令的单条响应等待超时（毫秒）；ERASE 上限 90 s：固件侧 60 s + 余量，超时≠失败 */
 export const Timeout = {
 	PING: 1_000,
 	SET_POWER: 5_000,
-	ENTER_PGM: 10_000,
+	ENTER_PGM: 40_000,
 	ERASE: 90_000,
 	FLASH_INIT: 5_000,
 	WRITE_BEGIN: 1_000,
@@ -42,11 +43,15 @@ export const Timeout = {
 	READ_BEGIN: 2_000,
 	READ_DATA: 1_000,
 	QUIT: 2_000,
-	RESET_RUN: 2_000,
+	RESET_RUN: 15_000,
 	GET_STATE: 1_000,
 	WRITE_SECURE: 2_000,
-	DISCONNECT: 1_000
+	DISCONNECT: 1_000,
+	SET_CHIP: 1_000
 } as const;
+
+/** RESET_RUN 响应 DATA[0]：0=原生复位，其他值=断电/上电模拟复位 */
+export type ResetMode = 'native' | 'simulated';
 
 /** 单块写上限（WRITE_BEGIN/DATA/COMMIT 一个事务的总数据量） */
 export const WRITE_BLOCK_MAX = 512;
@@ -76,8 +81,8 @@ export class F2mcLinkClient {
 	}
 
 	/**
-	 * ENTER_PGM(0x03)：与目标握手进入编程模式（仅 IDLE 态可用）。
-	 * 目标无响应时固件失败路径最长 ~7 s 才返回，超时后不得立即发新命令。
+	 * ENTER_PGM(0x03)：与目标握手进入编程模式；新版固件允许从任意状态完整重进。
+	 * 固件最多执行三轮断电、上电和握手，超时后不得立即发新命令。
 	 */
 	public async enterPgm(): Promise<void> {
 		await transact(this.transport, Cmd.ENTER_PGM, Buffer.alloc(0), 0, Timeout.ENTER_PGM);
@@ -91,6 +96,15 @@ export class F2mcLinkClient {
 	/** FLASH_INIT(0x05)：初始化目标 Flash 接口并切高速时钟（SYNCED/ERASED 可用），成功后进入 RW_MODE */
 	public async flashInit(xx: number, yy: number): Promise<void> {
 		await transact(this.transport, Cmd.FLASH_INIT, Buffer.from([xx, yy]), 0, Timeout.FLASH_INIT);
+	}
+
+	/** SET_CHIP(0x13)：下发 MCU 型号，供固件选择与目标匹配的内嵌 DA */
+	public async setChip(chipName: string): Promise<void> {
+		const payload = Buffer.from(chipName, 'ascii');
+		if (payload.length === 0 || payload.length > 24) {
+			throw ProgError.badParam(`芯片型号长度 ${payload.length} 超出 1..=24`);
+		}
+		await transact(this.transport, Cmd.SET_CHIP, payload, 0, Timeout.SET_CHIP);
 	}
 
 	/** 大块写（≤512B，仅 RW_MODE）：WRITE_BEGIN → WRITE_DATA×N（每包 ≤56B）→ WRITE_COMMIT */
@@ -134,10 +148,11 @@ export class F2mcLinkClient {
 
 	/**
 	 * RESET_RUN(0x0D)：复位目标运行用户程序。
-	 * 编程器无复位硬件，固件恒回 UNSUPPORTED 并把状态机复位到 IDLE——该错误码属预期，调用侧应容错。
+	 * 新固件返回 DATA[0] 上报复位方式；旧固件回 UNSUPPORTED，由调用侧兼容处理。
 	 */
-	public async resetRun(): Promise<void> {
-		await transact(this.transport, Cmd.RESET_RUN, Buffer.alloc(0), 0, Timeout.RESET_RUN);
+	public async resetRun(): Promise<ResetMode> {
+		const data = await transact(this.transport, Cmd.RESET_RUN, Buffer.alloc(0), 1, Timeout.RESET_RUN);
+		return data[0] === 0 ? 'native' : 'simulated';
 	}
 
 	/** GET_STATE(0x0E)：查询状态机。返回 [state, lastErr]：state 0=IDLE 1=SYNCED 2=ERASED 3=RW_MODE */

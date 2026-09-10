@@ -84,11 +84,7 @@ export async function program(
 	// 到 SYNCED（安全锁自动解锁一次）
 	onEvent({ type: 'stage', stage: 'enterPgm' });
 	try {
-		const lockedHint = await sessionBeginSynced(client, onEvent, cancel);
-		if (lockedHint) {
-			onEvent({ type: 'warn', message: '目标已加安全锁（last_error=0x02），整片擦除将自动解锁' });
-			report.unlocked = true;
-		}
+		await sessionBeginSynced(client, onEvent, cancel);
 	} catch (error) {
 		if (!(error instanceof ProgError && error.kind === 'securityLocked')) {
 			throw error;
@@ -182,10 +178,7 @@ export async function eraseChip(
 
 	onEvent({ type: 'stage', stage: 'enterPgm' });
 	try {
-		const lockedHint = await sessionBeginSynced(client, onEvent, cancel);
-		if (lockedHint) {
-			onEvent({ type: 'warn', message: '目标已加安全锁（last_error=0x02），整片擦除将自动解锁' });
-		}
+		await sessionBeginSynced(client, onEvent, cancel);
 	} catch (error) {
 		if (!(error instanceof ProgError && error.kind === 'securityLocked')) {
 			throw error;
@@ -241,32 +234,14 @@ async function verifyImage(
 
 /**
  * 会话入口：到达 SYNCED（握手有效）。
- * QUIT 后的 SYNCED 握手已失效（GET_STATE 无法区分），一律复位状态机后完整重进。
- * 返回 true 表示 GET_STATE 的 last_error 显示目标处于安全锁（0x02）。
+ * 新版固件允许从任意状态 ENTER_PGM，内部执行完整断电、放电、上电和握手流程。
  */
 async function sessionBeginSynced(
 	client: F2mcLinkClient,
 	onEvent: (event: FlowEvent) => void,
 	cancel: CancelToken
-): Promise<boolean> {
-	const [state, lastErr] = await client.getState();
-	const lockedHint = lastErr === StatusCode.SECURITY_LOCKED;
-	if (state === 3) {
-		onEvent({ type: 'log', message: '编程器在读写模式，QUIT 退回 SYNCED' });
-		await client.quit();
-		onEvent({ type: 'log', message: '重新进入编程模式（QUIT 后握手已失效）' });
-		await client.resetRun().catch(() => undefined);
-		await enterPgmWithRecovery(client, onEvent, cancel);
-		return lockedHint;
-	}
-	if (state === 1) {
-		onEvent({ type: 'log', message: '重新进入编程模式（确保握手有效）' });
-		await client.resetRun().catch(() => undefined);
-		await enterPgmWithRecovery(client, onEvent, cancel);
-		return lockedHint;
-	}
+): Promise<void> {
 	await enterPgmWithRecovery(client, onEvent, cancel);
-	return false;
 }
 
 /**
@@ -338,53 +313,27 @@ async function eraseWithRecovery(
 }
 
 /**
- * ENTER_PGM 超时恢复：目标无响应时固件失败路径最长 ~7 s，已在 10 s 超时覆盖范围内；
- * 此处仅作保底——超时后不得立即发新命令，先 GET_STATE 轮询等固件返回，再报错。
+ * ENTER_PGM 超时恢复：新版固件内部最多执行三轮完整断电、上电和握手，40 s 超时覆盖最坏路径。
+ * 超时后不得立即发新命令，先 GET_STATE 轮询等固件返回，再报错。
  */
 async function enterPgmWithRecovery(
 	client: F2mcLinkClient,
 	onEvent: (event: FlowEvent) => void,
 	cancel: CancelToken
 ): Promise<void> {
-	await ensureIdle(client, onEvent, cancel);
 	try {
 		await client.enterPgm();
 	} catch (error) {
+		if (error instanceof ProgError && error.kind === 'deviceStatus' && error.status === StatusCode.TIMEOUT) {
+			throw ProgError.transport('进入编程模式超时：目标未就绪（放电/上电/握手超限）。若目标板有外部供电请先断开；大电容板请人工断电后重试');
+		}
 		if (!(error instanceof ProgError && error.kind === 'timeout')) {
 			throw error;
 		}
-		onEvent({ type: 'warn', message: 'ENTER_PGM 超时：固件可能仍在重试握手（最长 ~7 s），等待其返回…' });
+		onEvent({ type: 'warn', message: 'ENTER_PGM 超时：等待固件完成放电/握手重试…' });
 		await waitFirmware(client, onEvent, cancel, 15);
 		throw ProgError.transport('进入编程模式失败：目标无响应，请检查目标板供电与 DBG 接线后重试');
 	}
-}
-
-/** 确保编程器状态机处于 IDLE（ENTER_PGM 仅在 IDLE 可用）。固件忙时 GET_STATE 会超时，轮询等待 */
-async function ensureIdle(
-	client: F2mcLinkClient,
-	onEvent: (event: FlowEvent) => void,
-	cancel: CancelToken
-): Promise<void> {
-	for (let attempt = 0; attempt < 15; attempt++) {
-		try {
-			const [state] = await client.getState();
-			if (state !== 0) {
-				onEvent({ type: 'log', message: `编程器状态非 IDLE（state=${state}），RESET_RUN 复位状态机` });
-				await client.resetRun().catch(() => undefined);
-			}
-			return;
-		} catch (error) {
-			if (!(error instanceof ProgError && error.kind === 'timeout')) {
-				throw error;
-			}
-			checkCancel(cancel);
-			if (attempt === 0) {
-				onEvent({ type: 'warn', message: '编程器仍忙，等待其返回…' });
-			}
-			await sleep(1000);
-		}
-	}
-	throw ProgError.transport('编程器长时间无响应');
 }
 
 /**
@@ -393,8 +342,9 @@ async function ensureIdle(
  */
 async function resetRunGraceful(client: F2mcLinkClient, onEvent: (event: FlowEvent) => void): Promise<void> {
 	try {
-		await client.resetRun();
-		onEvent({ type: 'log', message: '已复位运行用户程序' });
+		const mode = await client.resetRun();
+		const detail = mode === 'native' ? '原生复位引脚' : '断电+上电模拟复位';
+		onEvent({ type: 'log', message: `已复位运行用户程序（${detail}）` });
 	} catch (error) {
 		if (!(error instanceof ProgError && error.kind === 'deviceStatus' && error.status === StatusCode.UNSUPPORTED)) {
 			throw error;

@@ -20,6 +20,8 @@ export class SimProgrammer implements DapTransport {
 	public readonly flash = new Map<number, number>();
 	/** 安全锁 */
 	public locked = false;
+	/** SET_CHIP 下发的型号名 */
+	public chipName = '';
 	/** 收到的帧日志（断言用） */
 	public readonly frameLog: Buffer[] = [];
 	/** 模拟故障注入：下 N 次传输直接返回传输错误 */
@@ -68,7 +70,7 @@ export class SimProgrammer implements DapTransport {
 		// 安全锁目标：仅握手/整片擦除/L1 查询类命令可用，其余回 0xFD
 		const lockAllowed = [
 			Cmd.PING, Cmd.ERASE, Cmd.ENTER_PGM, Cmd.RESET_RUN, Cmd.GET_STATE,
-			Cmd.SEND_BREAK, Cmd.DISCONNECT, Cmd.ABORT, Cmd.SET_POWER
+			Cmd.SEND_BREAK, Cmd.DISCONNECT, Cmd.ABORT, Cmd.SET_POWER, Cmd.SET_CHIP
 		] as number[];
 		if (this.locked && !lockAllowed.includes(cmd)) {
 			return SimProgrammer.resp(StatusCode.SECURITY_LOCKED);
@@ -84,9 +86,7 @@ export class SimProgrammer implements DapTransport {
 				return SimProgrammer.resp(StatusCode.OK);
 			}
 			case Cmd.ENTER_PGM: {
-				if (this.state !== SimState.IDLE) {
-					return SimProgrammer.resp(StatusCode.STATE_ERROR);
-				}
+				// 新版固件允许任何状态进入，内部执行完整断电重进。
 				this.state = SimState.SYNCED;
 				// 加锁目标：握手本身可成功（SYNCED），随后时钟切换时收到 0xFD
 				return SimProgrammer.resp(this.locked ? StatusCode.SECURITY_LOCKED : StatusCode.OK);
@@ -184,8 +184,7 @@ export class SimProgrammer implements DapTransport {
 					this.pendingLock = false;
 				}
 				this.state = SimState.IDLE;
-				// 无复位硬件，固件恒回 UNSUPPORTED 并把状态机复位到 IDLE
-				return SimProgrammer.resp(StatusCode.UNSUPPORTED);
+				return SimProgrammer.resp(StatusCode.OK, [0x01]);
 			}
 			case Cmd.GET_STATE:
 				return SimProgrammer.resp(StatusCode.OK, [this.state, this.lastErr]);
@@ -199,8 +198,15 @@ export class SimProgrammer implements DapTransport {
 			}
 			case Cmd.SEND_BREAK:
 				return SimProgrammer.resp(StatusCode.OK);
+			case Cmd.SET_CHIP:
+				if (payload.length === 0 || payload.length > 24) {
+					return SimProgrammer.resp(StatusCode.BAD_PARAM);
+				}
+				this.chipName = payload.toString('ascii');
+				return SimProgrammer.resp(StatusCode.OK);
 			case Cmd.DISCONNECT:
 				this.state = SimState.IDLE;
+				this.chipName = '';
 				return SimProgrammer.resp(StatusCode.OK);
 			case Cmd.ABORT:
 				return SimProgrammer.resp(StatusCode.OK);
