@@ -119,13 +119,15 @@ async function setupProgrammer(
 }
 
 async function resolveProgrammerPort(outputChannel: vscode.OutputChannel): Promise<string | undefined> {
+	const configured = getProgrammerSettings().programmerPort;
+	if (configured !== 'auto') return configured;
 	let ports;
 	try {
 		ports = await SerialPort.list();
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		void vscode.window.showErrorMessage(`枚举串口失败：${message}`);
-		return undefined;
+		return await pickAnySerialPort();
 	}
 
 	const candidates = selectZeztekPorts(ports);
@@ -135,8 +137,8 @@ async function resolveProgrammerPort(outputChannel: vscode.OutputChannel): Promi
 	}
 
 	if (candidates.length === 0) {
-		void vscode.window.showWarningMessage('未发现泽兆烧录器（CP210x USB 串口），请确认烧录器已通过 USB 连接并安装驱动。');
-		return undefined;
+		void vscode.window.showWarningMessage('未发现泽兆烧录器串口，请手动选择串口。');
+		return await pickAnySerialPort();
 	}
 
 	const picked = await vscode.window.showQuickPick(candidates.map(info => ({
@@ -150,6 +152,23 @@ async function resolveProgrammerPort(outputChannel: vscode.OutputChannel): Promi
 	}
 	outputChannel.appendLine(`[flash] 使用烧录器串口: ${picked.label}`);
 	return picked.label;
+}
+
+async function pickAnySerialPort(): Promise<string | undefined> {
+	let ports;
+	try {
+		ports = await SerialPort.list();
+	} catch (error) {
+		const message = error instanceof Error ? error.message : String(error);
+		void vscode.window.showErrorMessage(`枚举串口失败：${message}`);
+		return undefined;
+	}
+	if (ports.length === 0) {
+		void vscode.window.showWarningMessage('未检测到可用串口。');
+		return undefined;
+	}
+	const picked = await vscode.window.showQuickPick(ports.map(info => ({ label: info.path, description: info.manufacturer })), { title: '选择泽兆烧录器串口' });
+	return picked?.label;
 }
 
 export async function runZeztekDownload(layout: BuildLayout | undefined, outputChannel: vscode.OutputChannel): Promise<void> {

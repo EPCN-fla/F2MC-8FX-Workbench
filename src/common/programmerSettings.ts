@@ -14,6 +14,7 @@ export interface ProgrammerSettings {
 	programmerPower: ProgrammerPower;
 	f2mcLinkSecure: boolean;
 	f2mcLinkReset: boolean;
+	programmerPort: string;
 }
 
 const STORAGE_KEY = 'f2mc-8fx-workbench.programmerSettings';
@@ -25,6 +26,7 @@ const DEFAULTS: ProgrammerSettings = {
 	programmerPower: '5V',
 	f2mcLinkSecure: false,
 	f2mcLinkReset: true
+	,programmerPort: 'auto'
 };
 
 let storage: vscode.Memento | undefined;
@@ -42,6 +44,7 @@ export function getProgrammerSettings(): ProgrammerSettings {
 		programmerPower: stored.programmerPower ?? legacy.get<ProgrammerPower>('programmerPower') ?? DEFAULTS.programmerPower,
 		f2mcLinkSecure: stored.f2mcLinkSecure ?? legacy.get<boolean>('f2mcLinkSecure') ?? DEFAULTS.f2mcLinkSecure,
 		f2mcLinkReset: stored.f2mcLinkReset ?? legacy.get<boolean>('f2mcLinkReset') ?? DEFAULTS.f2mcLinkReset
+		,programmerPort: stored.programmerPort ?? DEFAULTS.programmerPort
 	};
 }
 

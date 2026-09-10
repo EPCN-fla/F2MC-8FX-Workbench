@@ -11,7 +11,7 @@ export type F2mcSettingsNodeKind = 'section' | 'property' | 'chip' | 'programmer
 
 export type F2mcProjectPropertyKey = 'loadModuleName' | 'loadModuleDirectory' | 'objectDirectory' | 'listDirectory';
 export type F2mcChipSelectionKey = 'category' | 'model';
-export type F2mcProgrammerSettingKey = 'type' | 'mode' | 'power' | 'secure' | 'reset';
+export type F2mcProgrammerSettingKey = 'type' | 'mode' | 'power' | 'secure' | 'reset' | 'port';
 
 interface F2mcSettingsNodeInit {
 	label: string;
@@ -259,6 +259,7 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 		const typeLabel = isZezhao ? 'Zeztek（泽兆）' : 'F2MC-LINK（自制）';
 		const modeLabel = settings.programmerMode === 'online' ? '在线' : '离线';
 		const powerLabel = settings.programmerPower;
+		const portLabel = settings.programmerPort === 'auto' ? '自动检测' : settings.programmerPort;
 		const secureOn = settings.f2mcLinkSecure;
 		const resetOn = settings.f2mcLinkReset;
 
@@ -303,6 +304,12 @@ export class F2mcSettingsTreeProvider implements vscode.TreeDataProvider<F2mcSet
 				} : undefined
 			})
 		];
+		if (isZezhao) {
+			nodes.splice(1, 0, programmerNode({
+				label: '串口号', iconName: 'serialport.svg', programmerKey: 'port', description: portLabel,
+				command: { command: 'f2mc_workbench.settings.editProgrammerSetting', title: '选择串口号', arguments: ['port'] }
+			}));
+		}
 
 		if (!isZezhao) {
 			nodes.push(

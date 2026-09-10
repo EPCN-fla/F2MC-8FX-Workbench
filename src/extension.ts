@@ -1,6 +1,7 @@
 import * as path from 'node:path';
 
 import * as vscode from 'vscode';
+import { SerialPort } from 'serialport';
 
 import { BuilderOptionsWebview } from './build/builderOptionsWebview';
 import { runProjectTask } from './build/buildRunner';
@@ -461,6 +462,23 @@ async function selectChipByModel(chips: F2mcChipInfo[], project: F2mcProjectInfo
 
 async function editProgrammerSetting(settingKey: F2mcProgrammerSettingKey): Promise<void> {
 	const settings = getProgrammerSettings();
+	if (settingKey === 'port') {
+		let ports;
+		try {
+			ports = await SerialPort.list();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			void vscode.window.showErrorMessage(`枚举串口失败：${message}`);
+			return;
+		}
+		const items = [{ label: '自动检测', value: 'auto' }, ...ports.map(port => ({ label: port.path, description: port.manufacturer, value: port.path }))];
+		const picked = await showQuickPickActive(items, { title: '选择泽兆烧录器串口', placeHolder: settings.programmerPort === 'auto' ? '自动检测' : settings.programmerPort }, items.find(item => item.value === settings.programmerPort));
+		if (picked && picked.value !== settings.programmerPort) {
+			await updateProgrammerSetting('programmerPort', picked.value);
+			void vscode.window.showInformationMessage(`已设置泽兆烧录器串口：${picked.label}。`);
+		}
+		return;
+	}
 	if (settingKey === 'type') {
 		const current = settings.programmerType;
 		const typeItems = [
