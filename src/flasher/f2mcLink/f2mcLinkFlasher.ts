@@ -21,6 +21,19 @@ import { F2mcLinkClient } from './proto';
 // 镜像按内容嗅探 Intel HEX 与 Motorola S-record，覆盖编译器全部转换器输出格式。
 const IMAGE_EXTENSIONS = ['.mhx', '.s19', '.hex', '.ihx', '.ehx'];
 
+// PING 探测：打开通道发 PING，仅响应标识为 "F2MC-LINK" 的判定为本编程器，避免误选其它 CMSIS-DAP 设备
+async function probeChannel(channel: F2mcLinkChannelInfo): Promise<boolean> {
+	const transport = new HidTransport(channel);
+	try {
+		const client = new F2mcLinkClient(transport);
+		return await client.ping() === 'F2MC-LINK';
+	} catch {
+		return false;
+	} finally {
+		transport.close();
+	}
+}
+
 async function pickChannel(): Promise<F2mcLinkChannelInfo | undefined> {
 	let channels: F2mcLinkChannelInfo[];
 	try {
@@ -35,11 +48,20 @@ async function pickChannel(): Promise<F2mcLinkChannelInfo | undefined> {
 		void vscode.window.showWarningMessage('未发现 F2MC-LINK 编程器（CMSIS-DAP HID 设备），请确认编程器已通过 USB 连接。');
 		return undefined;
 	}
-	if (channels.length === 1) {
-		return channels[0];
+
+	// 逐通道 PING 探测，过滤掉其它 CMSIS-DAP 设备（DAPLink、J-Link OB 等）
+	const probed = await Promise.all(channels.map(async channel => ({ channel, isF2mcLink: await probeChannel(channel) })));
+	const f2mcChannels = probed.filter(entry => entry.isF2mcLink).map(entry => entry.channel);
+
+	if (f2mcChannels.length === 0) {
+		void vscode.window.showWarningMessage(`检测到 ${channels.length} 个 CMSIS-DAP 设备，但均非 F2MC-LINK 编程器，请确认编程器已通过 USB 连接。`);
+		return undefined;
+	}
+	if (f2mcChannels.length === 1) {
+		return f2mcChannels[0];
 	}
 
-	const picked = await vscode.window.showQuickPick(channels.map(channel => ({
+	const picked = await vscode.window.showQuickPick(f2mcChannels.map(channel => ({
 		label: channel.product,
 		description: describeChannel(channel),
 		channel
