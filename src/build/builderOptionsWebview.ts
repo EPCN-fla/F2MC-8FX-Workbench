@@ -5,8 +5,8 @@ import * as vscode from 'vscode';
 import type { BuilderOptionsViewModel, BuilderOptionLine, BuilderTabId } from './builderOptionsConstants';
 import { BUILDER_TABS, EMPTY_VIEW_MODEL } from './builderOptionsConstants';
 import { createBuilderOptionsHtml } from './builderOptionsHtml';
-import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
-import type { F2mcProjectConfig } from './types';
+import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from '../common/fileSystem';
+import type { F2mcProjectConfig } from '../types';
 
 const SECTION_TO_TAB: Record<string, BuilderTabId> = {};
 for (const tab of BUILDER_TABS) {

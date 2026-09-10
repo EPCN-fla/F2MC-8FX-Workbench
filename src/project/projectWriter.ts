@@ -1,9 +1,9 @@
 import * as path from 'node:path';
 
-import { ensureFinalNewline, readTextFile, writeTextFile } from './fileSystem';
-import { readIniSection } from './iniUtils';
-import { getMemberFileType } from './memberUtils';
-import type { F2mcProjectConfig, F2mcProjectInfo, F2mcProjectMember } from './types';
+import { ensureFinalNewline, readTextFile, writeTextFile } from '../common/fileSystem';
+import { readIniSection } from '../common/iniUtils';
+import { getMemberFileType } from '../common/memberUtils';
+import type { F2mcProjectConfig, F2mcProjectInfo, F2mcProjectMember } from '../types';
 
 export async function saveProjectFiles(config: F2mcProjectConfig): Promise<void> {
 	await Promise.all(config.projects.map(project => saveProjectFile(project)));

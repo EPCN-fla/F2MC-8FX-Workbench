@@ -394,7 +394,7 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "test:flasher": "node --test \"dist/test/flasher/*.test.js\""
+    "test:flasher": "node --test \"dist/test/flasher/**/*.test.js\""
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

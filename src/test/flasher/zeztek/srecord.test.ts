@@ -3,7 +3,7 @@
 import { deepEqual, equal, throws } from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { SRecordError, buildImage, imageChecksum, parseS19, validateRange } from '../../flasher/srecord';
+import { SRecordError, buildImage, imageChecksum, parseS19, validateRange } from '../../../flasher/zeztek/srecord';
 
 // S1 记录: 0x8000 起 5 字节 11 22 33 44 55（拆成两条记录）
 const S19_TEXT = [

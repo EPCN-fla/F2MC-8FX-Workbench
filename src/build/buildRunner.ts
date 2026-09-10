@@ -4,10 +4,10 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from './fileSystem';
-import { runFlashDownload } from './flasher/flasherService';
-import { findMissingCompilerTools, resolveCompilerDirectory } from './toolchain';
-import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from './types';
+import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from '../common/fileSystem';
+import { runFlashDownload } from '../flasher/flasherService';
+import { findMissingCompilerTools, resolveCompilerDirectory } from '../toolchain/toolchain';
+import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from '../types';
 
 interface CommandSpec {
 	commandLines: string[];

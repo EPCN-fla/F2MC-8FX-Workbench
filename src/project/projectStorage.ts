@@ -2,10 +2,10 @@ import * as path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { CONFIG_FILE_NAME, EXTENSION_ID, HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from './constants';
-import { readTextFile, writeJsonFile, getSystemAnsiEncodingLabel } from './fileSystem';
+import { CONFIG_FILE_NAME, EXTENSION_ID, HELPER_DIR_NAME, LEGACY_HELPER_DIR_NAME } from '../constants';
+import { readTextFile, writeJsonFile, getSystemAnsiEncodingLabel } from '../common/fileSystem';
 import { parsePrjProject, parseWspProject } from './projectParser';
-import type { F2mcProjectConfig } from './types';
+import type { F2mcProjectConfig } from '../types';
 
 const LEGACY_CONFIG_FILE_NAMES = [CONFIG_FILE_NAME, 'f2mc_workbench.json'];
 

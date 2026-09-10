@@ -3,7 +3,7 @@
 import { deepEqual, equal } from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BUILTIN_MCUS, blockAddrs, findMcuByCpuName, mcuAliases, totalKb } from '../../flasher/mcuTable';
+import { BUILTIN_MCUS, blockAddrs, findMcuByCpuName, mcuAliases, totalKb } from '../../../flasher/zeztek/mcuTable';
 
 describe('mcuTable', () => {
 	it('cpuName 精确匹配（896.csv 中的型号名）', () => {

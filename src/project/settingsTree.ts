@@ -3,8 +3,8 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import type { F2mcChipInfo } from './chipCatalog';
-import { toWorkspaceRelativePath } from './pathUtils';
-import type { F2mcProjectConfig, F2mcProjectInfo } from './types';
+import { toWorkspaceRelativePath } from '../common/pathUtils';
+import type { F2mcProjectConfig, F2mcProjectInfo } from '../types';
 
 export type F2mcSettingsNodeKind = 'section' | 'property' | 'chip' | 'empty';
 
