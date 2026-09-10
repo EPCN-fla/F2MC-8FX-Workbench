@@ -1,4 +1,4 @@
-export type BuildKind = 'build' | 'clean' | 'download';
+export type BuildKind = 'build' | 'clean' | 'download' | 'erase';
 
 export type F2mcProjectMemberKind = 'folder' | 'file';
 

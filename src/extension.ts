@@ -34,10 +34,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	});
 
 	const outputChannel = vscode.window.createOutputChannel('F2MC-8FX Build');
+	// 左侧对齐下 priority 越小越靠右：取负值让本插件按钮排在左侧区域的最右端
 	const statusBarItems = [
-		createStatusBarItem('f2mc_workbench.project.build', '$(tools)', '编译', '编译工程', 10),
-		createStatusBarItem('f2mc_workbench.project.download', '$(arrow-circle-down)', '烧录', '烧录目标文件', 9),
-		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', 8)
+		createStatusBarItem('f2mc_workbench.project.build', '$(tools)', '编译', '编译工程', -100),
+		createStatusBarItem('f2mc_workbench.project.download', '$(arrow-circle-down)', '烧录', '烧录目标文件', -101),
+		createStatusBarItem('f2mc_workbench.project.erase', '$(circle-slash)', '擦除', '整片擦除目标芯片', -102),
+		createStatusBarItem('f2mc_workbench.project.clean', '$(trash)', '清理', '清理编译产物', -103)
 	];
 	context.subscriptions.push(...statusBarItems);
 
@@ -170,6 +172,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.clean', async (node?: F2mcProjectNode) => {
 			await withStatusBarSpin('f2mc_workbench.project.clean', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'clean', node));
+		}),
+		vscode.commands.registerCommand('f2mc_workbench.project.erase', async () => {
+			await withStatusBarSpin('f2mc_workbench.project.erase', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'erase'));
 		}),
 		vscode.commands.registerCommand('f2mc_workbench.project.download', async () => {
 			await withStatusBarSpin('f2mc_workbench.project.download', () => runProjectCommand(treeProvider, loadCurrentProject, outputChannel, context.extensionPath, 'download'));

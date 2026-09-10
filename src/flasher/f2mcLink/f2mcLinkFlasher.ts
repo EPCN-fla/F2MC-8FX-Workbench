@@ -13,7 +13,7 @@ import type { BuildLayout } from '../../build/buildRunner';
 import { getProgrammerSettings } from '../../common/programmerSettings';
 import { findChipByName, parseChipsCsv, rangesDesc } from './chipdef';
 import { ProgError } from './errors';
-import { program, STAGE_LABELS, type CancelToken, type FlowEvent, type FlowReport } from './flow';
+import { eraseChip, program, STAGE_LABELS, type CancelToken, type FlowEvent, type FlowReport } from './flow';
 import { hexFormatLabel, parseHexImage, totalBytes } from './hexfile';
 import { describeChannel, enumerateHidChannels, HidTransport, type F2mcLinkChannelInfo } from './hidTransport';
 import { F2mcLinkClient } from './proto';
@@ -69,6 +69,83 @@ async function pickChannel(): Promise<F2mcLinkChannelInfo | undefined> {
 		title: '检测到多个 F2MC-LINK 编程器，请选择'
 	});
 	return picked?.channel;
+}
+
+export async function runF2mcLinkErase(outputChannel: vscode.OutputChannel): Promise<void> {
+	const confirm = '擦除';
+	const choice = await vscode.window.showWarningMessage(
+		'确认整片擦除目标芯片？芯片内程序与数据将全部清除（含安全锁解除）。',
+		{ modal: true },
+		confirm
+	);
+	if (choice !== confirm) {
+		return;
+	}
+
+	const log = (message: string): void => {
+		outputChannel.appendLine(`[erase] ${message}`);
+	};
+
+	let erased = false;
+	try {
+		await vscode.window.withProgress({
+			location: vscode.ProgressLocation.Notification,
+			title: 'F2MC-LINK 擦除',
+			cancellable: true
+		}, async (progress, token) => {
+			progress.report({ message: '连接编程器…' });
+			const channel = await pickChannel();
+			if (!channel) {
+				return; // pickChannel 已提示原因（未发现设备/用户取消选择）
+			}
+			log(`通道: ${describeChannel(channel)}`);
+
+			const cancel: CancelToken = { cancelled: false };
+			const cancellation = token.onCancellationRequested(() => {
+				cancel.cancelled = true;
+			});
+			const transport = new HidTransport(channel);
+			transport.setCancel(cancel);
+			const client = new F2mcLinkClient(transport);
+			try {
+				const onEvent = (event: FlowEvent): void => {
+					if (event.type === 'stage') {
+						progress.report({ message: `${STAGE_LABELS[event.stage]}…` });
+						log(`=== ${STAGE_LABELS[event.stage]} ===`);
+					} else if (event.type === 'warn') {
+						log(`警告: ${event.message}`);
+					} else if (event.type === 'log') {
+						log(event.message);
+					}
+				};
+				await eraseChip(client, onEvent, cancel);
+				erased = true;
+			} finally {
+				cancellation.dispose();
+				try {
+					await client.disconnect();
+				} catch {
+					// 断开通知失败不阻塞关闭
+				}
+				transport.close();
+			}
+		});
+		if (erased) {
+			log('整片擦除完成');
+			void vscode.window.showInformationMessage('擦除成功：目标芯片已整片擦除。');
+		}
+	} catch (error) {
+		if (error instanceof ProgError && error.kind === 'cancelled') {
+			outputChannel.appendLine('[erase] 已取消擦除');
+			return;
+		}
+		const message = error instanceof Error ? error.message : String(error);
+		outputChannel.appendLine(`[erase] 擦除失败: ${message}`);
+		if (error instanceof Error && error.stack) {
+			outputChannel.appendLine(error.stack);
+		}
+		void vscode.window.showErrorMessage(`擦除失败：${message}`);
+	}
 }
 
 export async function runF2mcLinkDownload(layout: BuildLayout | undefined, outputChannel: vscode.OutputChannel, extensionPath: string): Promise<void> {

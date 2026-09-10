@@ -63,6 +63,14 @@
         }
       },
       {
+        "command": "f2mc_workbench.project.erase",
+        "title": "%f2mc_workbench.project.erase%",
+        "icon": {
+          "dark": "./res/icon/erase.svg",
+          "light": "./res/icon/erase.svg"
+        }
+      },
+      {
         "command": "f2mc_workbench.project.clean",
         "title": "%f2mc_workbench.project.clean%",
         "icon": {
@@ -154,6 +162,9 @@
           "command": "f2mc_workbench.project.download"
         },
         {
+          "command": "f2mc_workbench.project.erase"
+        },
+        {
           "command": "f2mc_workbench.project.clean"
         },
         {
@@ -208,8 +219,13 @@
         },
         {
           "when": "fla1337.f2mc_workbench.projectActived",
-          "command": "f2mc_workbench.project.clean",
+          "command": "f2mc_workbench.project.erase",
           "group": "navigation@5"
+        },
+        {
+          "when": "fla1337.f2mc_workbench.projectActived",
+          "command": "f2mc_workbench.project.clean",
+          "group": "navigation@6"
         }
       ],
       "view/title": [

@@ -163,6 +163,46 @@ export async function program(
 	return report;
 }
 
+/**
+ * 整片擦除流程：PING → ENTER_PGM → ERASE(0x0000)。
+ * 目标加安全锁时 ENTER_PGM 不可用，固件允许锁态下直接整片擦除（同时解锁）——擦除目标本身已达成。
+ */
+export async function eraseChip(
+	client: F2mcLinkClient,
+	onEvent: (event: FlowEvent) => void,
+	cancel: CancelToken
+): Promise<void> {
+	onEvent({ type: 'stage', stage: 'ping' });
+	const id = await client.ping();
+	onEvent({ type: 'log', message: `PING: ${id}，固件版本 v${client.fwVersion?.join('.') ?? '?'}` });
+	if (id !== 'F2MC-LINK') {
+		throw ProgError.transport(`设备标识 "${id}" 不是 F2MC-LINK 编程器，已中止（可能选错了 CMSIS-DAP 设备）`);
+	}
+	checkCancel(cancel);
+
+	onEvent({ type: 'stage', stage: 'enterPgm' });
+	try {
+		const lockedHint = await sessionBeginSynced(client, onEvent, cancel);
+		if (lockedHint) {
+			onEvent({ type: 'warn', message: '目标已加安全锁（last_error=0x02），整片擦除将自动解锁' });
+		}
+	} catch (error) {
+		if (!(error instanceof ProgError && error.kind === 'securityLocked')) {
+			throw error;
+		}
+		onEvent({ type: 'warn', message: '目标已加安全锁，直接整片擦除解锁' });
+		onEvent({ type: 'stage', stage: 'erase' });
+		await eraseWithRecovery(client, 0x0000, onEvent, cancel);
+		onEvent({ type: 'stage', stage: 'done' });
+		return;
+	}
+	checkCancel(cancel);
+
+	onEvent({ type: 'stage', stage: 'erase' });
+	await eraseWithRecovery(client, 0x0000, onEvent, cancel);
+	onEvent({ type: 'stage', stage: 'done' });
+}
+
 /** 镜像读回比对（跳过 0xFFBB/BC/BD 三个 CR 校准字节），返回校验字节数 */
 async function verifyImage(
 	client: F2mcLinkClient,

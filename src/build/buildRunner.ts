@@ -5,7 +5,7 @@ import * as path from 'node:path';
 import * as vscode from 'vscode';
 
 import { convertFileToAnsiEncoding, readTextFile, writeTextFile } from '../common/fileSystem';
-import { runFlashDownload } from '../flasher/flasherService';
+import { runFlashDownload, runFlashErase } from '../flasher/flasherService';
 import { findMissingCompilerTools, resolveCompilerDirectory } from '../toolchain/toolchain';
 import type { BuildKind, F2mcProjectConfig, F2mcProjectInfo } from '../types';
 
@@ -60,6 +60,11 @@ export async function runProjectTask(
 		const project = getActiveProject(config);
 		const layout = project ? createBuildLayout(project) : undefined;
 		await runFlashDownload(layout, outputChannel, extensionPath);
+		return;
+	}
+
+	if (kind === 'erase') {
+		await runFlashErase(outputChannel);
 		return;
 	}
 
