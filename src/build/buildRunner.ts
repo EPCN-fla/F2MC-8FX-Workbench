@@ -59,7 +59,7 @@ export async function runProjectTask(
 	if (kind === 'download') {
 		const project = getActiveProject(config);
 		const layout = project ? createBuildLayout(project) : undefined;
-		await runFlashDownload(layout, outputChannel);
+		await runFlashDownload(layout, outputChannel, extensionPath);
 		return;
 	}
 
